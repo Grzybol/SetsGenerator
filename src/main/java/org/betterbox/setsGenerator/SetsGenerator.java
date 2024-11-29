@@ -39,6 +39,7 @@ public final class SetsGenerator extends JavaPlugin {
     private String endColorIncreasePerLevel;
     private String startColorIncreasePerLevel;
     private ItemFactory itemFactory;
+    private GuiManager guiManager;
 
 
     @Override
@@ -57,6 +58,8 @@ public final class SetsGenerator extends JavaPlugin {
         loadElasticBuffer();
         new CommandManager(this, configManager);
         itemFactory = new ItemFactory(this,this);
+        guiManager = new GuiManager(this, itemFactory);
+        getServer().getPluginManager().registerEvents(new EventManager(this), this);
 
     }
 
@@ -329,6 +332,9 @@ public final class SetsGenerator extends JavaPlugin {
         }
 
         return 0; // Brak odpowiedniego tagu
+    }
+    public ItemFactory getItemFactory(){
+        return itemFactory;
     }
 
 }
