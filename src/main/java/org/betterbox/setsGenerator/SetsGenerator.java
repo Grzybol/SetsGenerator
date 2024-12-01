@@ -40,6 +40,8 @@ public final class SetsGenerator extends JavaPlugin {
     private String startColorIncreasePerLevel;
     private ItemFactory itemFactory;
     private GuiManager guiManager;
+    private Map<ItemStack,Integer> upgradeItems;
+    private Map<Integer,Map<ItemStack,Integer>> upgradeLists;
 
 
     @Override
@@ -226,6 +228,12 @@ public final class SetsGenerator extends JavaPlugin {
     public String getEndColorIncreasePerLevel() {
         return endColorIncreasePerLevel;
     }
+    public void setUpgradeLists(Map<Integer,Map<ItemStack,Integer>> upgradeLists){
+        this.upgradeLists=upgradeLists;
+    }
+    public Map<Integer,Map<ItemStack,Integer>> getUpgradeLists(){
+        return upgradeLists;
+    }
 
     public void setEndColorIncreasePerLevel(String endColorIncreasePerLevel) {
         this.endColorIncreasePerLevel = endColorIncreasePerLevel;
@@ -335,6 +343,9 @@ public final class SetsGenerator extends JavaPlugin {
     }
     public ItemFactory getItemFactory(){
         return itemFactory;
+    }
+    public FileManager getFileManager(){
+        return fileManager;
     }
 
 }

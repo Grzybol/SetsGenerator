@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -29,6 +30,14 @@ public class CommandManager implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        boolean isPlayer = false;
+        Player player = null;
+        if (sender instanceof Player) {
+            player = (Player) sender;
+            isPlayer = true;
+        }else{
+            isPlayer=false;
+        }
         if (!command.getName().equalsIgnoreCase("sg")) return false;
 
         if (args.length < 1) {
@@ -44,6 +53,12 @@ public class CommandManager implements CommandExecutor, TabCompleter {
             case "spawnnpc":
                 spawnNPC(sender, args);
                 break;
+
+            case "saveitem":
+                if(isPlayer) {
+
+                    ((SetsGenerator) plugin).getFileManager().saveItemStackToFile(args[0].toLowerCase(), player.getItemInHand());
+                }
 
             default:
                 sender.sendMessage(ChatColor.RED + "Unknown subcommand. Use: /sg <reloadconfig|spawnnpc>");

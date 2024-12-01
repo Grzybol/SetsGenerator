@@ -2,6 +2,7 @@ package org.betterbox.setsGenerator;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -57,7 +58,7 @@ public class ConfigManager {
         ReloadConfig();
     }
     public void ReloadConfig(){
-        String folderPath = plugin.getDataFolder().getAbsolutePath();
+        //String folderPath = plugin.getDataFolder().getAbsolutePath();
         pluginLogger.log(PluginLogger.LogLevel.DEBUG,"ConfigManager: ReloadConfig called");
         // Odczytanie ustawień log_level z pliku konfiguracyjnego
         configFile = new File(plugin.getDataFolder(), "config.yml");
@@ -108,6 +109,7 @@ public class ConfigManager {
         pluginLogger.log(PluginLogger.LogLevel.DEBUG,"ConfigManager.ReloadConfig calling pluginLogger.setEnabledLogLevels(enabledLogLevels) with parameters: "+ Arrays.toString(enabledLogLevels.toArray()));
         // Ustawienie aktywnych poziomów logowania w loggerze
         pluginLogger.setEnabledLogLevels(enabledLogLevels);
+        loadUpgradeItems();
     }
     private String getConfigString(String path, String defaultValue) {
         if (plugin.getConfig().contains(path)) {
@@ -211,5 +213,55 @@ public class ConfigManager {
         } catch (IOException e) {
             pluginLogger.log(PluginLogger.LogLevel.ERROR, "Error while updating config file: " + e.getMessage());
         }
+    }
+    private void loadUpgradeItems() {
+        plugin.reloadConfig();
+        ConfigurationSection section = plugin.getConfig().getConfigurationSection("upgradeItemsSection");
+        if (section == null) {
+            pluginLogger.log(PluginLogger.LogLevel.ERROR, "Config section 'upgradeItemsSection' not found.");
+            return;
+        }
+
+        for (String key : section.getKeys(false)) {
+            try {
+                int id = Integer.parseInt(key);
+                Map<ItemStack, Integer> items = new HashMap<>();
+                List<String> itemList = section.getStringList(key);
+
+                for (String item : itemList) {
+                    String[] parts = item.split(" ");
+                    if (parts.length == 3) {
+                        String itemIdentifier = parts[0];
+                        int amount = Integer.parseInt(parts[1]);
+
+                        ItemStack itemStack = null;
+                        if (itemIdentifier.endsWith(".yml")) {
+                            // Wczytywanie niestandardowego przedmiotu z pliku
+                            itemStack = setsGenerator.getFileManager().loadItemStackFromFile(itemIdentifier);
+                        } else {
+                            // Wczytywanie standardowego przedmiotu Minecraft
+                            Material material = Material.matchMaterial(itemIdentifier);
+                            if (material != null) {
+                                itemStack = new ItemStack(material, amount);
+                            }
+                        }
+
+                        if (itemStack != null) {
+                            items.put(itemStack, amount);
+                        } else {
+                            pluginLogger.log(PluginLogger.LogLevel.ERROR, "Invalid material or file for: " + itemIdentifier);
+                        }
+                    } else {
+                        pluginLogger.log(PluginLogger.LogLevel.ERROR, "Invalid item format: " + item);
+                    }
+                }
+
+                setsGenerator.getUpgradeLists().put(id, items);
+            } catch (NumberFormatException e) {
+                pluginLogger.log(PluginLogger.LogLevel.ERROR, "Invalid key format in 'upgradeItemsSection': " + key);
+            }
+        }
+
+        pluginLogger.log(PluginLogger.LogLevel.INFO, "Upgrade items loaded successfully.");
     }
 }

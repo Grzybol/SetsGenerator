@@ -41,9 +41,9 @@ public class FileManager {
 
     public void saveItemStackToFile(String fileName, ItemStack itemStack) {
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "FileRewardManager.saveItemStackToFile called, fileName: " + fileName);
-        File customRewardsFolder = new File(plugin.getDataFolder() + File.separator + "customRewards");
+        File customRewardsFolder = new File(plugin.getDataFolder() + File.separator + "upgradeItems");
         if (!customRewardsFolder.exists()) {
-            pluginLogger.log(PluginLogger.LogLevel.INFO, "customRewardsFolder does not exist, creating a new one");
+            pluginLogger.log(PluginLogger.LogLevel.INFO, "upgradeItems folder does not exist, creating a new one");
             customRewardsFolder.mkdirs();
         }
         try {
@@ -57,6 +57,28 @@ public class FileManager {
 
         } catch (Exception e) {
             pluginLogger.log(PluginLogger.LogLevel.ERROR, "Cannot save the item : " + fileName + ", error: " + e.getMessage());
+        }
+    }
+    public ItemStack loadItemStackFromFile(String relativeFilePath) {
+        try {
+            File file = new File(plugin.getDataFolder(), relativeFilePath);
+            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Loading ItemStack from file: " + file.getAbsolutePath()+", provided relativeFilePath: "+relativeFilePath);
+
+            if (!file.exists()) {
+                pluginLogger.log(PluginLogger.LogLevel.ERROR, "loadItemStackFromFile, error: file doesn't exist. filePath: " + file.getAbsolutePath());
+                return null;
+            }
+
+            YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+            ItemStack itemStack = config.getItemStack("item");
+            if (itemStack == null) {
+                pluginLogger.log(PluginLogger.LogLevel.ERROR, "loadItemStackFromFile, error: itemStack=null. filePath: " + file.getAbsolutePath());
+                return null;
+            }
+            return itemStack;
+        } catch (Exception e) {
+            pluginLogger.log(PluginLogger.LogLevel.ERROR, "loadItemStackFromFile, filePath: " + relativeFilePath + ", error: " + e.getMessage());
+            return null;
         }
     }
 
