@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class FileManager {
     private final JavaPlugin plugin;
@@ -81,5 +82,49 @@ public class FileManager {
             return null;
         }
     }
+    public boolean playerExists(UUID playerId) {
+        return dataConfig.getConfigurationSection("players." + playerId.toString()) != null;
+    }
+
+    public Map<String, Integer> loadPlayerEquipmentLevels(UUID playerId) {
+        Map<String, Integer> equipmentLevels = new HashMap<>();
+        String path = "players." + playerId.toString();
+
+        if (!playerExists(playerId)) {
+            return equipmentLevels; // Zwróci pustą mapę, jeżeli gracz nie istnieje
+        }
+
+        String[] tags = {"chestplate_level", "leggings_level", "helmet_level", "boots_level", "talisman_level", "sword_level"};
+        for (String tag : tags) {
+            int level = dataConfig.getInt(path + "." + tag, 0);
+            equipmentLevels.put(tag, level);
+        }
+
+        return equipmentLevels;
+    }
+
+    public void savePlayerEquipmentLevels(UUID playerId, Map<String, Integer> equipmentLevels) {
+        String path = "players." + playerId.toString();
+        for (Map.Entry<String, Integer> entry : equipmentLevels.entrySet()) {
+            dataConfig.set(path + "." + entry.getKey(), entry.getValue());
+        }
+        saveDataConfig();
+    }
+
+    public void updatePlayerEquipmentLevel(UUID playerId, String tag, int newLevel) {
+        String path = "players." + playerId.toString() + "." + tag;
+        dataConfig.set(path, newLevel);
+        saveDataConfig();
+    }
+
+    private void saveDataConfig() {
+        try {
+            dataConfig.save(dataFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+            pluginLogger.log(PluginLogger.LogLevel.ERROR, "Error while saving data config: " + e.getMessage());
+        }
+    }
+
 
 }

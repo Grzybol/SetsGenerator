@@ -14,10 +14,12 @@ import java.util.Map;
 public class GuiManager {
     private final JavaPlugin plugin;
     private final ItemFactory itemFactory;
+    private final PluginLogger pluginLogger;
 
-    public GuiManager(JavaPlugin plugin, ItemFactory itemFactory) {
+    public GuiManager(JavaPlugin plugin, ItemFactory itemFactory,PluginLogger pluginLogger) {
         this.plugin = plugin;
         this.itemFactory = itemFactory;
+        this.pluginLogger=pluginLogger;
     }
 
     public void openLevelUpGui(Player player) {

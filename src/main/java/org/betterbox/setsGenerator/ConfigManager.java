@@ -104,6 +104,10 @@ public class ConfigManager {
         setsGenerator.setLeggingHealthBonus(getConfigInt("leggingHealthBonus", 8));
         setsGenerator.setBootsHealthBonus(getConfigInt("bootsHealthBonus", 6));
         setsGenerator.setHelmetHealthBonus(getConfigInt("helmetHealthBonus", 4));
+        setsGenerator.setStartColor(getConfigString("startColor", "255,255,255"));
+        setsGenerator.setEndColor(getConfigString("endColor", "0,0,0"));
+        setsGenerator.setStartColorIncreasePerLevel(getConfigString("startColorIncreasePerLevel", "5,5,5"));
+        setsGenerator.setEndColorIncreasePerLevel(getConfigString("endColorIncreasePerLevel", "10,10,10"));
 
 
         pluginLogger.log(PluginLogger.LogLevel.DEBUG,"ConfigManager.ReloadConfig calling pluginLogger.setEnabledLogLevels(enabledLogLevels) with parameters: "+ Arrays.toString(enabledLogLevels.toArray()));

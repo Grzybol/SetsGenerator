@@ -21,9 +21,11 @@ import java.util.UUID;
 public class ItemFactory {
     private JavaPlugin plugin;
     private SetsGenerator setsGenerator;
+    private final PluginLogger pluginLogger;
 
-    public ItemFactory(JavaPlugin plugin, SetsGenerator setsGenerator) {
+    public ItemFactory(JavaPlugin plugin, SetsGenerator setsGenerator,PluginLogger pluginLogger) {
         this.setsGenerator=setsGenerator;
+        this.pluginLogger=pluginLogger;
         this.plugin = plugin;
     }
 

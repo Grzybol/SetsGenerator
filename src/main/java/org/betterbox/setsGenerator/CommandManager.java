@@ -3,6 +3,7 @@ package org.betterbox.setsGenerator;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
@@ -11,6 +12,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
@@ -20,10 +22,12 @@ public class CommandManager implements CommandExecutor, TabCompleter {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
+    private final PluginLogger pluginLogger;
 
-    public CommandManager(JavaPlugin plugin, ConfigManager configManager) {
+    public CommandManager(JavaPlugin plugin, ConfigManager configManager,PluginLogger pluginLogger) {
         this.plugin = plugin;
         this.configManager = configManager;
+        this.pluginLogger=pluginLogger;
         plugin.getCommand("sg").setExecutor(this);
         plugin.getCommand("sg").setTabCompleter(this);
     }
@@ -57,7 +61,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
             case "saveitem":
                 if(isPlayer) {
 
-                    ((SetsGenerator) plugin).getFileManager().saveItemStackToFile(args[0].toLowerCase(), player.getItemInHand());
+                    ((SetsGenerator) plugin).getFileManager().saveItemStackToFile(args[1].toLowerCase(), player.getItemInHand());
                 }
 
             default:
@@ -94,17 +98,19 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         // Pobieranie lokalizacji gracza
         Location location = player.getLocation();
 
-        // Tworzenie NPC
+        NamespacedKey key = new NamespacedKey(plugin, "SetsGeneratorShop");
         Villager villager = (Villager) player.getWorld().spawnEntity(location, EntityType.VILLAGER);
 
-        // Ustawienia NPC
-        villager.setAI(false); // NPC nie może się poruszać
-        villager.setInvulnerable(true); // NPC nie otrzymuje obrażeń
-        villager.setCustomName(ChatColor.GOLD + "" + ChatColor.BOLD + "Shop"); // Złota pogrubiona nazwa
+// Ustawienie właściwości NPC
+        villager.setAI(false);
+        villager.setInvulnerable(true);
+        villager.setCustomName(ChatColor.GOLD + "" + ChatColor.BOLD + "Shop");
         villager.setCustomNameVisible(true);
         villager.setSilent(true);
         villager.setCollidable(false);
-        villager.setMetadata("SetsGeneratorShop", new FixedMetadataValue(plugin, "SetsGenerator Shop"));
+
+// Zapisz informację o tym, że to nasz NPC w PersistentDataContainer
+        villager.getPersistentDataContainer().set(key, PersistentDataType.STRING, "SetsGenerator Shop");
 
         sender.sendMessage(ChatColor.GREEN + "NPC Shop spawned successfully.");
     }

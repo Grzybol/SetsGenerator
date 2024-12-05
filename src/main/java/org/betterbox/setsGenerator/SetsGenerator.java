@@ -58,10 +58,10 @@ public final class SetsGenerator extends JavaPlugin {
         fileManager = new FileManager(getDataFolder().getAbsolutePath(),this,this,pluginLogger);
         configManager.ReloadConfig();
         loadElasticBuffer();
-        new CommandManager(this, configManager);
-        itemFactory = new ItemFactory(this,this);
-        guiManager = new GuiManager(this, itemFactory);
-        getServer().getPluginManager().registerEvents(new EventManager(this), this);
+        new CommandManager(this, configManager,pluginLogger);
+        itemFactory = new ItemFactory(this,this,pluginLogger);
+        guiManager = new GuiManager(this, itemFactory,pluginLogger);
+        getServer().getPluginManager().registerEvents(new EventManager(this,guiManager,itemFactory,this,pluginLogger,fileManager), this);
 
     }
 
@@ -347,5 +347,6 @@ public final class SetsGenerator extends JavaPlugin {
     public FileManager getFileManager(){
         return fileManager;
     }
+    public GuiManager getGuiManager(){return guiManager;}
 
 }
