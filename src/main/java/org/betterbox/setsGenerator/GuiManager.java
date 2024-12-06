@@ -1,5 +1,7 @@
 package org.betterbox.setsGenerator;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -7,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Map;
@@ -69,16 +72,24 @@ public class GuiManager {
 
         // Zielona wełna (akceptacja)
         ItemStack greenWool = new ItemStack(Material.GREEN_WOOL);
-        greenWool.getItemMeta().setDisplayName(ChatColor.GREEN + "Confirm");
+        ItemMeta greenMeta = greenWool.getItemMeta();
+        if (greenMeta != null) {
+            greenMeta.displayName(Component.text("Confirm", NamedTextColor.GREEN));
+            greenWool.setItemMeta(greenMeta);
+        }
 
-        // Czerwona wełna (anulowanie)
+// Czerwona wełna (anulowanie)
         ItemStack redWool = new ItemStack(Material.RED_WOOL);
-        redWool.getItemMeta().setDisplayName(ChatColor.RED + "Cancel");
+        ItemMeta redMeta = redWool.getItemMeta();
+        if (redMeta != null) {
+            redMeta.displayName(Component.text("Cancel", NamedTextColor.RED));
+            redWool.setItemMeta(redMeta);
+        }
 
         // Dodanie elementów do GUI
         confirmationGui.setItem(3, greenWool);
         confirmationGui.setItem(5, redWool);
-
+        confirmationGui.setItem(4, selectedItem);
         // Otwórz GUI dla gracza
         player.openInventory(confirmationGui);
     }

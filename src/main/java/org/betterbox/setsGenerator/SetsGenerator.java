@@ -42,6 +42,7 @@ public final class SetsGenerator extends JavaPlugin {
     private GuiManager guiManager;
     private Map<ItemStack,Integer> upgradeItems;
     private Map<Integer,Map<ItemStack,Integer>> upgradeLists;
+    private final String[] tags = {"chestplate_level", "leggings_level", "helmet_level", "boots_level", "talisman_level", "sword_level"};
 
 
     @Override
@@ -295,6 +296,7 @@ public final class SetsGenerator extends JavaPlugin {
     public void onDisable() {
         // Plugin shutdown logic
     }
+    /*
     public Map<String, Integer> getPlayerEquipmentLevels(Player player) {
         // Mapa wynikowa przechowująca najwyższy poziom każdego typu przedmiotu
         Map<String, Integer> equipmentLevels = new HashMap<>();
@@ -340,6 +342,165 @@ public final class SetsGenerator extends JavaPlugin {
         }
 
         return 0; // Brak odpowiedniego tagu
+    }
+
+     */
+    public Map<String, Integer> getPlayerEquipmentLevels(Player player) {
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Starting getPlayerEquipmentLevels for player: " + player.getName());
+
+        // Mapa wynikowa przechowująca najwyższy poziom każdego typu przedmiotu
+        Map<String, Integer> equipmentLevels = new HashMap<>();
+
+        // Klucze dla PersistentDataContainer
+        String[] tags = {"chestplate_level", "leggings_level", "helmet_level", "boots_level", "talisman_level", "sword_level"};
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Initialized tags: " + Arrays.toString(tags));
+
+        // Przeglądaj ekwipunek gracza (inventory i założone przedmioty)
+        List<ItemStack> allItems = new ArrayList<>();
+        allItems.addAll(Arrays.asList(player.getInventory().getContents())); // Ekwipunek
+        allItems.addAll(Arrays.asList(player.getInventory().getArmorContents())); // Założony pancerz
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Collected all items from inventory and armor.");
+
+        for (ItemStack item : allItems) {
+            if (item == null) {
+                //pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Skipping null item.");
+                continue;
+            }
+            if (!item.hasItemMeta()) {
+                //pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Skipping item without metadata: " + item.toString());
+                continue;
+            }
+
+            ItemMeta meta = item.getItemMeta();
+            //pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Processing item with meta: " + item.toString());
+
+            for (String tag : tags) {
+                NamespacedKey key = new NamespacedKey(this, tag);
+                if (meta.getPersistentDataContainer().has(key, PersistentDataType.INTEGER)) {
+                    int level = meta.getPersistentDataContainer().get(key, PersistentDataType.INTEGER);
+                    pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Found tag '" + tag + "' with level " + level + " in item: " + item.toString());
+
+                    // Aktualizuj wartość w mapie tylko, jeśli nowy poziom jest wyższy
+                    int previousLevel = equipmentLevels.getOrDefault(tag, 0);
+                    if (level > previousLevel) {
+                        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Updating level for tag '" + tag + "' from " + previousLevel + " to " + level);
+                    }
+                    equipmentLevels.put(tag, Math.max(previousLevel, level));
+                } else {
+                    pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Tag '" + tag + "' not found in item.");
+                }
+            }
+        }
+
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Final equipment levels: " + equipmentLevels.toString());
+        return equipmentLevels;
+    }
+    public int getItemSlotFromPlayerEqByTag(Player player, String tag) {
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Starting getItemSlotFromPlayerEqByTag for player: " + player.getName() + " and tag: " + tag);
+
+        // Usuwamy wszystko poza podstawową nazwą tagu
+        String cleanTag = tag.split(":")[0].trim(); // Oczyszczenie tagu z dodatkowych informacji i spacji
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "getItemSlotFromPlayerEqByTag Using clean tag: " + cleanTag);
+
+        // Przechodzi przez wszystkie przedmioty w ekwipunku gracza
+        ItemStack[] inventoryItems = player.getInventory().getContents();
+        for (int i = 0; i < inventoryItems.length; i++) {
+            ItemStack item = inventoryItems[i];
+            if (item == null || !item.hasItemMeta()) {
+                continue;
+            }
+
+            ItemMeta meta = item.getItemMeta();
+            NamespacedKey key = new NamespacedKey(this, cleanTag);
+            if (meta.getPersistentDataContainer().has(key, PersistentDataType.INTEGER)) {
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Found clean tag '" + cleanTag + "' in item at slot " + i);
+                return i; // Zwraca slot, w którym znajduje się przedmiot
+            }
+        }
+
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Clean tag '" + cleanTag + "' not found in any items.");
+        return -1; // Jeśli tag nie zostanie znaleziony, zwróć -1
+    }
+    public ItemStack getItemFromPlayerEqByTag(Player player, String tag) {
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Starting getItemFromPlayerEqByTag for player: " + player.getName() + " and tag: " + tag);
+        String cleanTag = tag.split(":")[0].trim(); // Oczyszczenie tagu z dodatkowych informacji i spacji
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "getItemFromPlayerEqByTag Using clean tag: " + cleanTag);
+        // Przechodzi przez wszystkie przedmioty w ekwipunku gracza
+        ItemStack[] inventoryItems = player.getInventory().getContents();
+        for (ItemStack item : inventoryItems) {
+            if (item == null || !item.hasItemMeta()) {
+                continue;
+            }
+
+            ItemMeta meta = item.getItemMeta();
+            NamespacedKey key = new NamespacedKey(this, cleanTag);
+            if (meta.getPersistentDataContainer().has(key, PersistentDataType.INTEGER)) {
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Found cleanTag '" + cleanTag + "' in item: " + item.toString());
+                return item; // Zwraca przedmiot zawierający tag
+            }
+        }
+
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "cleanTag '" + cleanTag + "' not found in any items.");
+        return null; // Jeśli cleanTag nie zostanie znaleziony, zwróć null
+    }
+    public ItemStack getItemFromPlayerSlot(Player player, int slot) {
+        if (slot < 0 || slot >= player.getInventory().getSize()) {
+            // Jeśli slot jest poza zakresem ekwipunku, zwróć null
+            return null;
+        }
+        return player.getInventory().getItem(slot); // Zwraca przedmiot w określonym slocie
+    }
+
+
+    public int getItemLevel(ItemStack item) {
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Starting getItemLevel for item: " + (item != null ? item.toString() : "null"));
+
+        if (item == null) {
+            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Item is null, returning level 0.");
+            return 0;
+        }
+        if (!item.hasItemMeta()) {
+            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Item has no metadata, returning level 0.");
+            return 0;
+        }
+
+        ItemMeta meta = item.getItemMeta();
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Processing item meta: " + meta.toString());
+
+        //String[] tags = {"chestplate_level", "leggings_level", "helmet_level", "boots_level", "talisman_level", "sword_level"};
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Initialized tags: " + Arrays.toString(tags));
+
+        for (String tag : tags) {
+            NamespacedKey key = new NamespacedKey(this, tag);
+            if (meta.getPersistentDataContainer().has(key, PersistentDataType.INTEGER)) {
+                int level = meta.getPersistentDataContainer().get(key, PersistentDataType.INTEGER);
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Found tag '" + tag + "' with level " + level);
+                return level;
+            } else {
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Tag '" + tag + "' not found.");
+            }
+        }
+
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "No tags found, returning level 0.");
+        return 0;
+    }
+    public String getTagFromItemstack(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) {
+            return null; // Brak przedmiotu lub metadanych
+        }
+
+        ItemMeta meta = item.getItemMeta();
+        String[] tags = {"chestplate_level", "leggings_level", "helmet_level", "boots_level", "talisman_level", "sword_level"};
+
+        for (String tag : tags) {
+            NamespacedKey key = new NamespacedKey(this, tag);
+            if (meta.getPersistentDataContainer().has(key, PersistentDataType.INTEGER)) {
+                int value = meta.getPersistentDataContainer().get(key, PersistentDataType.INTEGER);
+                return tag + ": " + value; // Zwraca nazwę tagu i jego wartość
+            }
+        }
+
+        return null; // Żaden z tagów nie został znaleziony
     }
     public ItemFactory getItemFactory(){
         return itemFactory;
