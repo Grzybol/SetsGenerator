@@ -5,6 +5,7 @@ import org.betterbox.elasticBuffer.ElasticBufferAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -40,8 +41,8 @@ public final class SetsGenerator extends JavaPlugin {
     private String startColorIncreasePerLevel;
     private ItemFactory itemFactory;
     private GuiManager guiManager;
-    private Map<ItemStack,Integer> upgradeItems;
-    private Map<Integer,Map<ItemStack,Integer>> upgradeLists;
+    private Map<ItemStack,Integer> upgradeItems= new HashMap<>();
+    private Map<Integer,Map<ItemStack,Integer>> upgradeLists= new HashMap<>();;
     private final String[] tags = {"chestplate_level", "leggings_level", "helmet_level", "boots_level", "talisman_level", "sword_level"};
 
 
@@ -450,7 +451,55 @@ public final class SetsGenerator extends JavaPlugin {
         }
         return player.getInventory().getItem(slot); // Zwraca przedmiot w określonym slocie
     }
+    public Map<ItemStack, Integer> getUpgradeItems(int level) {
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Fetching upgrade items for level: " + level);
 
+        // Pobierz mapę przedmiotów dla danego poziomu
+        Map<ItemStack, Integer> itemsForLevel = upgradeLists.get(level);
+
+        // Sprawdź, czy istnieje wpis dla tego poziomu
+        if (itemsForLevel != null) {
+            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Found items for level " + level);
+            // Zwróć kopię mapy, aby uniknąć modyfikacji oryginalnych danych przez użytkownika klasy
+            return new HashMap<>(itemsForLevel);
+        } else {
+            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "No items found for level " + level + ", returning empty map");
+            // Jeśli nie ma wpisu dla tego poziomu, zwróć pustą mapę
+            return new HashMap<>();
+        }
+    }
+
+    public boolean checkAndRemoveItems(Player player, Map<ItemStack, Integer> requiredItems) {
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Checking if player " + player.getName() + " has all required items");
+
+        Inventory inventory = player.getInventory();
+
+        // Najpierw sprawdź, czy gracz posiada wszystkie wymagane przedmioty w odpowiednich ilościach
+        for (Map.Entry<ItemStack, Integer> entry : requiredItems.entrySet()) {
+            ItemStack requiredItem = entry.getKey();
+            int requiredAmount = entry.getValue();
+
+            if (!inventory.containsAtLeast(requiredItem, requiredAmount)) {
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Player " + player.getName() + " does not have enough of: " + requiredItem);
+                // Jeśli nie ma wystarczającej ilości któregokolwiek przedmiotu, zwróć false
+                return false;
+            }
+        }
+
+        // Jeśli wszystkie przedmioty są dostępne, usuń je z ekwipunku
+        for (Map.Entry<ItemStack, Integer> entry : requiredItems.entrySet()) {
+            ItemStack requiredItem = entry.getKey();
+            int requiredAmount = entry.getValue();
+
+            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Removing " + requiredAmount + " of " + requiredItem + " from player " + player.getName());
+            // Usuń przedmioty z ekwipunku
+            inventory.removeItem(new ItemStack(requiredItem.getType(), requiredAmount));
+        }
+
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "All required items removed for player " + player.getName());
+        // Wszystkie wymagane przedmioty zostały usunięte, zwróć true
+        return true;
+    }
 
     public int getItemLevel(ItemStack item) {
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Starting getItemLevel for item: " + (item != null ? item.toString() : "null"));
@@ -496,7 +545,7 @@ public final class SetsGenerator extends JavaPlugin {
             NamespacedKey key = new NamespacedKey(this, tag);
             if (meta.getPersistentDataContainer().has(key, PersistentDataType.INTEGER)) {
                 int value = meta.getPersistentDataContainer().get(key, PersistentDataType.INTEGER);
-                return tag + ": " + value; // Zwraca nazwę tagu i jego wartość
+                return tag; // Zwraca nazwę tagu i jego wartość
             }
         }
 

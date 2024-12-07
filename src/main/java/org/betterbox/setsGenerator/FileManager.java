@@ -104,17 +104,26 @@ public class FileManager {
     }
 
     public void savePlayerEquipmentLevels(UUID playerId, Map<String, Integer> equipmentLevels) {
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Saving equipment levels for player: " + playerId);
+
         String path = "players." + playerId.toString();
         for (Map.Entry<String, Integer> entry : equipmentLevels.entrySet()) {
-            dataConfig.set(path + "." + entry.getKey(), entry.getValue());
+            String fullPath = path + "." + entry.getKey();
+            Integer value = entry.getValue();
+            dataConfig.set(fullPath, value);
+            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Set " + fullPath + " to " + value);
         }
         saveDataConfig();
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Data config saved for player: " + playerId);
     }
 
     public void updatePlayerEquipmentLevel(UUID playerId, String tag, int newLevel) {
         String path = "players." + playerId.toString() + "." + tag;
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Updating equipment level for player: " + playerId + ", tag: " + tag + ", new level: " + newLevel);
+
         dataConfig.set(path, newLevel);
         saveDataConfig();
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Data config updated and saved for player: " + playerId + ", tag: " + tag);
     }
 
     private void saveDataConfig() {

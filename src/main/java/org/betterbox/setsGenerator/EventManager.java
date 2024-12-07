@@ -283,6 +283,7 @@ public class EventManager implements Listener {
                     String tag = playerSelectedUpgradeItem.get(player.getUniqueId());
                     pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: recovered tag: " + tag,transactionID);
 
+
                     if (tag == null) {
                         player.sendMessage(ChatColor.RED + "No item found to upgrade.");
                         return;
@@ -300,9 +301,12 @@ public class EventManager implements Listener {
                     ItemStack upgradeItem = setsGenerator.getItemFromPlayerEqByTag(player,tag);
                     int currentLevel = setsGenerator.getItemLevel(upgradeItem);
                     int newLevel = currentLevel + 1;
-
+                    if(!setsGenerator.checkAndRemoveItems(player,setsGenerator.getUpgradeItems(newLevel))){
+                        player.sendMessage(ChatColor.RED + "Not enough items to upgrade!");
+                        return;
+                    }
                     pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Calculated new level: " + newLevel,transactionID);
-
+                    fileManager.updatePlayerEquipmentLevel(player.getUniqueId(),tag,newLevel);
                     ItemStack newItem = null;
                     switch (upgradeItem.getType()) {
                         case LEATHER_HELMET:

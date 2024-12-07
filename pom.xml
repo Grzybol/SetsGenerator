@@ -6,7 +6,7 @@
 
     <groupId>org.betterbox</groupId>
     <artifactId>SetsGenerator</artifactId>
-    <version>1.0.17-SNAPSHOT</version>
+    <version>1.0.21-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>SetsGenerator</name>

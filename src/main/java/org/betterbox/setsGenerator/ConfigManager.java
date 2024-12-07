@@ -234,7 +234,7 @@ public class ConfigManager {
 
                 for (String item : itemList) {
                     String[] parts = item.split(" ");
-                    if (parts.length == 3) {
+                    if (parts.length == 2) {
                         String itemIdentifier = parts[0];
                         int amount = Integer.parseInt(parts[1]);
 
