@@ -106,8 +106,9 @@ public class ConfigManager {
         setsGenerator.setHelmetHealthBonus(getConfigInt("helmetHealthBonus", 4));
         setsGenerator.setStartColor(getConfigString("startColor", "255,255,255"));
         setsGenerator.setEndColor(getConfigString("endColor", "0,0,0"));
-        setsGenerator.setStartColorIncreasePerLevel(getConfigString("startColorIncreasePerLevel", "5,5,5"));
-        setsGenerator.setEndColorIncreasePerLevel(getConfigString("endColorIncreasePerLevel", "10,10,10"));
+        setsGenerator.setStartColorIncreasePerLevel(getConfigString("startColorIncreasePerLevel", "-15,-15,-15"));
+        setsGenerator.setStartColorIncreasePer10Levels(getConfigString("startColorIncreasePer10Levels", "0,-50,-50"));
+        setsGenerator.setEndColorIncreasePerLevel(getConfigString("endColorIncreasePerLevel", "50,5,5"));
 
 
         pluginLogger.log(PluginLogger.LogLevel.DEBUG,"ConfigManager.ReloadConfig calling pluginLogger.setEnabledLogLevels(enabledLogLevels) with parameters: "+ Arrays.toString(enabledLogLevels.toArray()));
@@ -220,6 +221,8 @@ public class ConfigManager {
     }
     private void loadUpgradeItems() {
         plugin.reloadConfig();
+        int loadedLevels=0;
+
         ConfigurationSection section = plugin.getConfig().getConfigurationSection("upgradeItemsSection");
         if (section == null) {
             pluginLogger.log(PluginLogger.LogLevel.ERROR, "Config section 'upgradeItemsSection' not found.");
@@ -261,11 +264,12 @@ public class ConfigManager {
                 }
 
                 setsGenerator.getUpgradeLists().put(id, items);
+                loadedLevels++;
             } catch (NumberFormatException e) {
                 pluginLogger.log(PluginLogger.LogLevel.ERROR, "Invalid key format in 'upgradeItemsSection': " + key);
             }
         }
-
-        pluginLogger.log(PluginLogger.LogLevel.INFO, "Upgrade items loaded successfully.");
+        setsGenerator.setLoadedLevels(loadedLevels);
+        pluginLogger.log(PluginLogger.LogLevel.INFO, "Upgrade items loaded successfully. loadedLevels: "+loadedLevels);
     }
 }

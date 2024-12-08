@@ -1,5 +1,6 @@
 package org.betterbox.setsGenerator;
 
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.betterbox.elasticBuffer.ElasticBuffer;
 import org.betterbox.elasticBuffer.ElasticBufferAPI;
 import org.bukkit.Bukkit;
@@ -38,12 +39,13 @@ public final class SetsGenerator extends JavaPlugin {
     private String startColor;
     private String endColor;
     private String endColorIncreasePerLevel;
-    private String startColorIncreasePerLevel;
+    private String startColorIncreasePerLevel,startColorIncreasePer10Levels;
     private ItemFactory itemFactory;
     private GuiManager guiManager;
     private Map<ItemStack,Integer> upgradeItems= new HashMap<>();
     private Map<Integer,Map<ItemStack,Integer>> upgradeLists= new HashMap<>();;
     private final String[] tags = {"chestplate_level", "leggings_level", "helmet_level", "boots_level", "talisman_level", "sword_level"};
+    private int loadedLevels;
 
 
     @Override
@@ -56,8 +58,9 @@ public final class SetsGenerator extends JavaPlugin {
         }
         Set<PluginLogger.LogLevel> defaultLogLevels = EnumSet.of(PluginLogger.LogLevel.INFO, PluginLogger.LogLevel.WARNING, PluginLogger.LogLevel.ERROR);
         pluginLogger = new PluginLogger(folderPath, defaultLogLevels,this);
-        configManager = new ConfigManager(this, pluginLogger, folderPath,this);
         fileManager = new FileManager(getDataFolder().getAbsolutePath(),this,this,pluginLogger);
+        configManager = new ConfigManager(this, pluginLogger, folderPath,this);
+
         configManager.ReloadConfig();
         loadElasticBuffer();
         new CommandManager(this, configManager,pluginLogger);
@@ -240,13 +243,90 @@ public final class SetsGenerator extends JavaPlugin {
     public void setEndColorIncreasePerLevel(String endColorIncreasePerLevel) {
         this.endColorIncreasePerLevel = endColorIncreasePerLevel;
     }
+    public String getStartColorIncreasePer10Levels() {
+        return startColorIncreasePer10Levels;
+    }
 
+
+    public void setStartColorIncreasePer10Levels(String startColorIncreasePer10Levels) {
+        this.startColorIncreasePer10Levels = startColorIncreasePer10Levels;
+    }
     public String getStartColorIncreasePerLevel() {
         return startColorIncreasePerLevel;
+    }
+    public int getLoadedLevels() {
+        return loadedLevels;
+    }
+
+    public void setLoadedLevels(int loadedLevels) {
+        this.loadedLevels = loadedLevels;
     }
 
     public void setStartColorIncreasePerLevel(String startColorIncreasePerLevel) {
         this.startColorIncreasePerLevel = startColorIncreasePerLevel;
+    }
+    public String applyGradientv2(String text, String startColor, String endColor, int level) {
+        // Konwersja stringów kolorów na tablice intów
+        int[] startRGB = Arrays.stream(startColor.split(",")).mapToInt(Integer::parseInt).toArray();
+        int[] endRGB = Arrays.stream(endColor.split(",")).mapToInt(Integer::parseInt).toArray();
+
+        // Pobranie wartości zwiększania kolorów na poziom
+        int[] startIncrease = Arrays.stream(getStartColorIncreasePerLevel().split(",")).mapToInt(Integer::parseInt).toArray();
+        int[] startIncrease10lvl = Arrays.stream(getStartColorIncreasePer10Levels().split(",")).mapToInt(Integer::parseInt).toArray();
+        int[] endIncrease = Arrays.stream(getEndColorIncreasePerLevel().split(",")).mapToInt(Integer::parseInt).toArray();
+
+        if (level > 1) {
+            // Obliczamy ile pełnych bloków 10-poziomowych mamy
+            int fullSets = level / 10;     // ile razy przekraczamy pełne 10 poziomów
+            int leftover = level % 10;     // ile poziomów powyżej ostatniego pełnego bloku 10-poziomowego
+
+            // Najpierw zastosujmy pełne 10-poziomowe bloki
+            // Każdy pełny blok (np. poziomy 1–10, 11–20, ...) daje:
+            // 8 x startIncrease + 1 x startIncrease10lvl na końcu bloku
+
+            for (int i = 0; i < 3; i++) {
+                // Dla każdego pełnego bloku: 8 razy startIncrease
+                startRGB[i] = Math.min(255, Math.max(0, startRGB[i] + startIncrease[i] * (fullSets * 8)));
+                // Dla każdego pełnego bloku: 1 raz startIncrease10lvl
+                startRGB[i] = Math.min(255, Math.max(0, startRGB[i] + startIncrease10lvl[i] * fullSets));
+            }
+
+            // Teraz reszta (po ostatnim pełnym bloku 10 poziomów)
+            // leftover razy zwiększamy za pomocą startIncrease
+            if (leftover > 0) {
+                for (int i = 0; i < 3; i++) {
+                    startRGB[i] = Math.min(255, Math.max(0, startRGB[i] + startIncrease[i] * leftover));
+                }
+            }
+
+            // Teraz endRGB - tylko co 10 poziomów (jak poprzednio)
+            int endMultiplier = (level - 1) / 10;
+            for (int i = 0; i < 3; i++) {
+                endRGB[i] = Math.min(255, Math.max(0, endRGB[i] + endIncrease[i] * endMultiplier));
+            }
+        }
+
+        // Przygotowanie bufora na pokolorowany tekst
+        StringBuilder coloredText = new StringBuilder();
+        int textLength = text.length();
+
+        // Stosowanie gradientu
+        for (int i = 0; i < textLength; i++) {
+            float ratio = (textLength > 1) ? (float) i / (textLength - 1) : 0;
+            int red = (int) (startRGB[0] + ratio * (endRGB[0] - startRGB[0]));
+            int green = (int) (startRGB[1] + ratio * (endRGB[1] - startRGB[1]));
+            int blue = (int) (startRGB[2] + ratio * (endRGB[2] - startRGB[2]));
+
+            // Konwersja koloru RGB na string w formacie §x§r§g§b dla Minecrafta
+            String colorCode = String.format("§x§%X§%X§%X§%X§%X§%X§l",
+                    (red >> 4) & 0xF, red & 0xF,
+                    (green >> 4) & 0xF, green & 0xF,
+                    (blue >> 4) & 0xF, blue & 0xF);
+
+            coloredText.append(colorCode).append(text.charAt(i));
+        }
+
+        return coloredText.toString();
     }
 
     public String applyGradient(String text, String startColor, String endColor, int level) {
@@ -256,13 +336,22 @@ public final class SetsGenerator extends JavaPlugin {
 
         // Pobranie wartości zwiększania kolorów na poziom
         int[] startIncrease = Arrays.stream(getStartColorIncreasePerLevel().split(",")).mapToInt(Integer::parseInt).toArray();
-        int[] endIncrease = Arrays.stream(getEndColorIncreasePerLevel().split(",")).mapToInt(Integer::parseInt).toArray();
+        //int[] startIncrease10lvl = Arrays.stream(getStartColorIncreasePer10Levels().split(",")).mapToInt(Integer::parseInt).toArray();
 
+        int[] endIncrease = Arrays.stream(getEndColorIncreasePerLevel().split(",")).mapToInt(Integer::parseInt).toArray();
+        int increments = level % 10;
+        if (increments == 0 && level > 0) {
+            increments = 10;
+        }
         // Jeśli level > 1, modyfikujemy kolory początkowe i końcowe
         if (level > 1) {
             for (int i = 0; i < 3; i++) {
-                startRGB[i] = Math.min(255, Math.max(0, startRGB[i] + startIncrease[i] * (level - 1)));
-                endRGB[i] = Math.min(255, Math.max(0, endRGB[i] + endIncrease[i] * (level - 1)));
+                startRGB[i] = Math.min(255, Math.max(0, startRGB[i] + startIncrease[i] * increments));
+            }
+            // Dla endRGB tylko raz na 10 poziomów
+            //int endMultiplier = (level) / 10; // ilość razy, ile należy zastosować endIncrease
+            for (int i = 0; i < 3; i++) {
+                endRGB[i] = Math.min(255, Math.max(0, endRGB[i] + endIncrease[i] * level));
             }
         }
 
@@ -271,7 +360,7 @@ public final class SetsGenerator extends JavaPlugin {
 
         // Długość tekstu
         int textLength = text.length();
-
+        //coloredText.append("§l"); // Włącz pogrubienie dla całego tekstu
         // Stosowanie gradientu
         for (int i = 0; i < textLength; i++) {
             // Obliczenie aktualnego koloru w gradientzie
@@ -281,10 +370,12 @@ public final class SetsGenerator extends JavaPlugin {
             int blue = (int) (startRGB[2] + ratio * (endRGB[2] - startRGB[2]));
 
             // Konwersja koloru RGB na string w formacie §x§r§g§b dla Minecrafta
-            String colorCode = String.format("§x§%X§%X§%X§%X§%X§%X",
+            String colorCode = String.format("§x§%X§%X§%X§%X§%X§%X§l",
                     (red >> 4) & 0xF, red & 0xF,
                     (green >> 4) & 0xF, green & 0xF,
                     (blue >> 4) & 0xF, blue & 0xF);
+            // Dodawanie pokolorowanego i pogrubionego znaku do wynikowego tekstu
+            //coloredText.append(colorCode).append("§l").append(text.charAt(i));
 
             // Dodawanie pokolorowanego znaku do wynikowego tekstu
             coloredText.append(colorCode).append(text.charAt(i));
@@ -468,9 +559,56 @@ public final class SetsGenerator extends JavaPlugin {
             return new HashMap<>();
         }
     }
-
-    public boolean checkAndRemoveItems(Player player, Map<ItemStack, Integer> requiredItems) {
+    public boolean hasRequiredItems(Player player, Map<ItemStack, Integer> requiredItems) {
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Checking if player " + player.getName() + " has all required items");
+
+        Inventory inventory = player.getInventory();
+
+        // Sprawdź, czy gracz posiada wszystkie wymagane przedmioty w odpowiednich ilościach
+        for (Map.Entry<ItemStack, Integer> entry : requiredItems.entrySet()) {
+            ItemStack requiredItem = entry.getKey();
+            int requiredAmount = entry.getValue();
+
+            if (!inventory.containsAtLeast(requiredItem, requiredAmount)) {
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Player " + player.getName() + " does not have enough of: " + requiredItem);
+                return false; // Brak wystarczającej ilości danego przedmiotu
+            }
+        }
+
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Player " + player.getName() + " has all required items.");
+        return true;
+    }
+    public boolean checkAndRemoveItems(Player player, Map<ItemStack, Integer> requiredItems) {
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Checking if player " + player.getName() + " has all required items. requiredItems: "+requiredItems);
+
+        Inventory inventory = player.getInventory();
+
+        // Sprawdzenie posiadanych przedmiotów
+        for (Map.Entry<ItemStack, Integer> entry : requiredItems.entrySet()) {
+            ItemStack requiredItem = entry.getKey();
+            int requiredAmount = entry.getValue();
+
+            if (!inventory.containsAtLeast(requiredItem, requiredAmount)) {
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Player " + player.getName() + " does not have enough of: " + requiredItem);
+                return false;
+            }
+        }
+
+        // Usuwanie przedmiotów - klonujemy wymagany przedmiot i ustawiamy jego ilość
+        for (Map.Entry<ItemStack, Integer> entry : requiredItems.entrySet()) {
+            ItemStack requiredItem = entry.getKey().clone(); // klonujemy, by zachować metadane
+            int requiredAmount = entry.getValue();
+            requiredItem.setAmount(requiredAmount);
+
+            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Removing " + requiredAmount + " of " + requiredItem + " from player " + player.getName());
+            inventory.removeItem(requiredItem);
+        }
+
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "All required items removed for player " + player.getName());
+        return true;
+    }
+    public boolean checkAndRemoveItemsOld(Player player, Map<ItemStack, Integer> requiredItems) {
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Checking if player " + player.getName() + " has all required items. requiredItems: "+requiredItems);
 
         Inventory inventory = player.getInventory();
 
@@ -533,6 +671,23 @@ public final class SetsGenerator extends JavaPlugin {
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "No tags found, returning level 0.");
         return 0;
     }
+    public boolean hasAnyTag(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) {
+            return false;
+        }
+
+        ItemMeta meta = item.getItemMeta();
+        String[] tags = {"isForUpgradeGUI", "isForUpgradeGUI","Cancel","Confirm"};
+
+        for (String tag : tags) {
+            NamespacedKey key = new NamespacedKey(this, tag);
+            if (meta.getPersistentDataContainer().has(key, PersistentDataType.INTEGER)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
     public String getTagFromItemstack(ItemStack item) {
         if (item == null || !item.hasItemMeta()) {
             return null; // Brak przedmiotu lub metadanych
@@ -558,5 +713,25 @@ public final class SetsGenerator extends JavaPlugin {
         return fileManager;
     }
     public GuiManager getGuiManager(){return guiManager;}
+    public List<String> getItemNamesWithQuantity(Map<ItemStack, Integer> items) {
+        List<String> result = new ArrayList<>();
+        PlainTextComponentSerializer plainSerializer = PlainTextComponentSerializer.plainText();
 
+        for (Map.Entry<ItemStack, Integer> entry : items.entrySet()) {
+            ItemStack item = entry.getKey();
+            int quantity = entry.getValue();
+
+            String name;
+            if (item.hasItemMeta() && item.getItemMeta().displayName() != null) {
+                name = plainSerializer.serialize(item.getItemMeta().displayName());
+            } else {
+                name = item.getType().name().replace("_", " ").toLowerCase();
+            }
+
+            name += " x" + quantity;
+            result.add(name);
+        }
+
+        return result;
+    }
 }

@@ -87,6 +87,9 @@ public class EventManager implements Listener {
         if (event.getRightClicked() instanceof Villager villager) {
             NamespacedKey key = new NamespacedKey(plugin, "SetsGeneratorShop");
             if (villager.getPersistentDataContainer().has(key, PersistentDataType.STRING)) {
+                if(event.getPlayer().isSneaking() && event.getPlayer().isOp()){
+                    villager.remove();
+                }
                 Player player = event.getPlayer();
                 player.sendMessage(ChatColor.GREEN + "You have interacted with the Shop NPC!");
                 guiManager.openLevelUpGui(player);
@@ -251,23 +254,36 @@ public class EventManager implements Listener {
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: title " + title+", isSelectUpgradeGui: "+isSelectUpgradeGui+", isConfirmUpgradeGui: "+isConfirmUpgradeGui,transactionID);
         // Jeśli to jedno z naszych GUI, zablokuj wyciąganie przedmiotów
         if (isSelectUpgradeGui || isConfirmUpgradeGui) {
-
+            ItemStack clickedItem = event.getCurrentItem();
+            if (clickedItem == null || clickedItem.getType() == Material.AIR) {
+                return; // Brak interakcji
+            }
+            if(!setsGenerator.hasAnyTag(clickedItem)){
+                event.setCancelled(true);
+                return;
+            }
+            if(setsGenerator.getItemLevel(clickedItem)>setsGenerator.getLoadedLevels()){
+                event.setCancelled(true);
+                return;
+            }
             event.setCancelled(true);
             // Jeśli to GUI "Select Upgrade"
             if (isSelectUpgradeGui) {
-                ItemStack clickedItem = event.getCurrentItem();
-                if (clickedItem == null || clickedItem.getType() == Material.AIR) {
-                    return; // Brak interakcji
-                }
+
+
                 String tag = setsGenerator.getTagFromItemstack(clickedItem);
                 // Zapamiętujemy wybrany przedmiot
                 playerSelectedUpgradeItem.put(player.getUniqueId(), tag);
                 pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: player.getUniqueId()) " + player.getUniqueId()+", clickedItem: "+ clickedItem,transactionID);
+                if(!setsGenerator.hasRequiredItems(player,setsGenerator.getUpgradeItems(setsGenerator.getItemLevel(clickedItem)))){
+                    player.sendMessage(ChatColor.RED + "Not enough items to upgrade!");
+                    return;
+                }
                 guiManager.openConfirmationGui(player, clickedItem);
             }
             // Jeśli to GUI "Confirm Upgrade"
             else if (isConfirmUpgradeGui) {
-                ItemStack clickedItem = event.getCurrentItem();
+
                 pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: player.getUniqueId()) " + player.getUniqueId()+", clickedItem: "+ clickedItem,transactionID);
                 if (clickedItem == null || clickedItem.getType() == Material.AIR) {
                     return; // Brak interakcji

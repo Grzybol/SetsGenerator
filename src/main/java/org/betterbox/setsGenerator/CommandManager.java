@@ -4,6 +4,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
@@ -50,6 +52,10 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         }
 
         switch (args[0].toLowerCase()) {
+            case "info":
+                sender.sendMessage(ChatColor.GREEN + "Plugin created by: "+plugin.getDescription().getAuthors());
+                sender.sendMessage(ChatColor.GREEN + "version: "+plugin.getDescription().getVersion());
+                break;
             case "reloadconfig":
                 reloadConfig(sender);
                 break;
@@ -63,7 +69,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
 
                     ((SetsGenerator) plugin).getFileManager().saveItemStackToFile(args[1].toLowerCase(), player.getItemInHand());
                 }
-
+                break;
             default:
                 sender.sendMessage(ChatColor.RED + "Unknown subcommand. Use: /sg <reloadconfig|spawnnpc>");
                 break;
@@ -99,20 +105,43 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         Location location = player.getLocation();
 
         NamespacedKey key = new NamespacedKey(plugin, "SetsGeneratorShop");
+
         Villager villager = (Villager) player.getWorld().spawnEntity(location, EntityType.VILLAGER);
 
+
 // Ustawienie właściwości NPC
-        villager.setAI(false);
-        villager.setInvulnerable(true);
-        villager.setCustomName(ChatColor.GOLD + "" + ChatColor.BOLD + "Shop");
+        villager.setCustomName(ChatColor.GOLD + "" + ChatColor.BOLD + "Equipment upgrades");
         villager.setCustomNameVisible(true);
-        villager.setSilent(true);
+        AttributeInstance attribute = villager.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED);
+        if (attribute != null) {
+            attribute.setBaseValue(0);
+        }
+        villager.setAI(true);
+        villager.setInvulnerable(true); // Uczyń wieśniaka nieśmiertelnym
         villager.setCollidable(false);
+        villager.isInvisible();
 
 // Zapisz informację o tym, że to nasz NPC w PersistentDataContainer
         villager.getPersistentDataContainer().set(key, PersistentDataType.STRING, "SetsGenerator Shop");
 
         sender.sendMessage(ChatColor.GREEN + "NPC Shop spawned successfully.");
+
+
+        /*
+        Villager villager = player.getWorld().spawn(location, Villager.class, npc -> {
+            npc.setAI(false);
+            npc.setInvulnerable(true);
+            npc.setCustomName(ChatColor.GOLD + "" + ChatColor.BOLD + "Shop");
+            npc.setCustomNameVisible(true);
+            npc.setSilent(true);
+            npc.setCollidable(false);
+            npc.getPersistentDataContainer().set(key, PersistentDataType.STRING, "SetsGenerator Shop");
+        });
+
+        sender.sendMessage(ChatColor.GREEN + "NPC Shop spawned successfully.");
+
+         */
+
     }
 
     @Override
@@ -123,6 +152,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             if ("reloadconfig".startsWith(args[0].toLowerCase())) suggestions.add("reloadconfig");
             if ("spawnnpc".startsWith(args[0].toLowerCase())) suggestions.add("spawnnpc");
+            if ("saveitem".startsWith(args[0].toLowerCase())) suggestions.add("saveitem");
         }
 
         return suggestions;
