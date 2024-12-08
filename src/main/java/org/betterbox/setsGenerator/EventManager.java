@@ -306,7 +306,7 @@ public class EventManager implements Listener {
                     }
 
                     // Znalezienie slotu, w którym znajduje się przedmiot do ulepszenia
-                    int slot = setsGenerator.getItemSlotFromPlayerEqByTag(player,tag);
+                    int slot = setsGenerator.getItemSlotFromPlayerEqByTag(player,tag,transactionID);
                     if (slot == -1) {
                         // Jeżeli nie znaleziono przedmiotu w eq, można obsłużyć tę sytuację inaczej
                         player.sendMessage(ChatColor.RED + "Item to upgrade is not in your inventory.");
@@ -314,15 +314,15 @@ public class EventManager implements Listener {
                     }
 
                     // Implementacja ulepszenia
-                    ItemStack upgradeItem = setsGenerator.getItemFromPlayerEqByTag(player,tag);
+                    ItemStack upgradeItem = setsGenerator.getItemFromPlayerEqByTag(player,tag,transactionID);
                     int currentLevel = setsGenerator.getItemLevel(upgradeItem);
                     int newLevel = currentLevel + 1;
-                    if(!setsGenerator.checkAndRemoveItems(player,setsGenerator.getUpgradeItems(newLevel))){
+                    if(!setsGenerator.checkAndRemoveItems(player,setsGenerator.getUpgradeItems(newLevel),transactionID)){
                         player.sendMessage(ChatColor.RED + "Not enough items to upgrade!");
                         return;
                     }
                     pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Calculated new level: " + newLevel,transactionID);
-                    fileManager.updatePlayerEquipmentLevel(player.getUniqueId(),tag,newLevel);
+                    fileManager.updatePlayerEquipmentLevel(player.getUniqueId(),tag,newLevel,transactionID);
                     ItemStack newItem = null;
                     switch (upgradeItem.getType()) {
                         case LEATHER_HELMET:
@@ -374,7 +374,7 @@ public class EventManager implements Listener {
                     if (checkItem != null && checkItem.equals(newItem)) {
                         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Upgrade successful. New item is now in the slot.",transactionID);
                     } else {
-                        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Upgrade attempt did not reflect in player's inventory. Check itemFactory and item creation methods.",transactionID);
+                        pluginLogger.log(PluginLogger.LogLevel.WARNING, "EventManager.onPlayerClick: Upgrade attempt did not reflect in player's inventory. Check itemFactory and item creation methods.",transactionID);
                     }
 
 

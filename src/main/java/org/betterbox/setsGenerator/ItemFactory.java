@@ -60,10 +60,10 @@ public class ItemFactory {
     }
 
     public ItemStack createChestplate(int level) {
-        return createItem(Material.LEATHER_CHESTPLATE, level, setsGenerator.applyGradient("Chestplate Tier", setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false);
+        return createItem(Material.ELYTRA, level, setsGenerator.applyGradient("Elytra Tier", setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false);
     }
     public ItemStack createChestplate(int level, boolean isForUpgradeGUI, boolean hasRequiredItems) {
-        return createItem(Material.LEATHER_CHESTPLATE, level, setsGenerator.applyGradient("Chestplate Tier", setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems);
+        return createItem(Material.ELYTRA, level, setsGenerator.applyGradient("Elytra Tier", setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems);
     }
 
     public ItemStack createChestplate() {
@@ -101,7 +101,7 @@ public class ItemFactory {
 
         // Przygotowanie Lore i tagów
         List<String> lore = new ArrayList<>();
-        if (material == Material.LEATHER_CHESTPLATE) {
+        if (material == Material.ELYTRA) {
             lore.add(ChatColor.DARK_RED+""+ChatColor.BOLD+"    +" +  (level * setsGenerator.getChestplateHealthBonus()) + " [❤]");
             lore.add(ChatColor.AQUA+""+ChatColor.BOLD+"    +"+  (level * setsGenerator.getChestplateProtectionPerLvL()) + " [⛨]");
             meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "chestplate_level"), PersistentDataType.INTEGER, level);
@@ -171,14 +171,14 @@ public class ItemFactory {
         }
 
         // Nadawanie odpowiednich atrybutów
-        if (material == Material.LEATHER_CHESTPLATE) {
-            addArmorAttributes(meta, EquipmentSlot.CHEST, level, setsGenerator.getChestplateBaseProtection(), setsGenerator.getChestplateHealthBonus());
+        if (material == Material.ELYTRA) {
+            addArmorAttributes(meta, EquipmentSlot.CHEST, level, setsGenerator.getChestplateBaseProtection(), setsGenerator.getChestplateHealthBonus(),setsGenerator.getChestplateProtectionPerLvL());
         } else if (material == Material.LEATHER_LEGGINGS) {
-            addArmorAttributes(meta, EquipmentSlot.LEGS, level, setsGenerator.getLeggingsBaseProtection(), setsGenerator.getLeggingHealthBonus());
+            addArmorAttributes(meta, EquipmentSlot.LEGS, level, setsGenerator.getLeggingsBaseProtection(), setsGenerator.getLeggingHealthBonus(),setsGenerator.getLeggingsProtectionPerLvL());
         } else if (material == Material.LEATHER_HELMET) {
-            addArmorAttributes(meta, EquipmentSlot.HEAD, level, setsGenerator.getHelmetBaseProtection(), setsGenerator.getHelmetHealthBonus());
+            addArmorAttributes(meta, EquipmentSlot.HEAD, level, setsGenerator.getHelmetBaseProtection(), setsGenerator.getHelmetHealthBonus(),setsGenerator.getHelmetProtectionPerLvL());
         } else if (material == Material.LEATHER_BOOTS) {
-            addArmorAttributes(meta, EquipmentSlot.FEET, level, setsGenerator.getBootsBaseProtection(), setsGenerator.getBootsHealthBonus());
+            addArmorAttributes(meta, EquipmentSlot.FEET, level, setsGenerator.getBootsBaseProtection(), setsGenerator.getBootsHealthBonus(),setsGenerator.getBootsProtectionPerLvL());
         } else if (material == Material.MAGMA_CREAM) { // Talisman
             AttributeModifier healthModifier = new AttributeModifier(
                     UUID.randomUUID(), "generic.maxHealth", level * setsGenerator.getTalismanHealthBonus(),
@@ -202,7 +202,7 @@ public class ItemFactory {
         item.setItemMeta(meta);
         return item;
     }
-    private void addArmorAttributes(ItemMeta meta, EquipmentSlot slot, int level, int baseProtection, int healthBonus) {
+    private void addArmorAttributes(ItemMeta meta, EquipmentSlot slot, int level, int baseProtection, int healthBonus, int protectionPerLevel) {
         // Dodajemy atrybut zdrowia
         AttributeModifier healthModifier = new AttributeModifier(
                 UUID.randomUUID(), "generic.maxHealth", level * healthBonus,
@@ -211,7 +211,7 @@ public class ItemFactory {
 
         // Dodajemy atrybut pancerza
         AttributeModifier armorModifier = new AttributeModifier(
-                UUID.randomUUID(), "generic.armor", level * baseProtection,
+                UUID.randomUUID(), "generic.armor", (level *protectionPerLevel)+baseProtection,
                 AttributeModifier.Operation.ADD_NUMBER, slot);
         meta.addAttributeModifier(Attribute.GENERIC_ARMOR, armorModifier);
     }

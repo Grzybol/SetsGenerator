@@ -4,6 +4,7 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.betterbox.elasticBuffer.ElasticBuffer;
 import org.betterbox.elasticBuffer.ElasticBufferAPI;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -13,6 +14,7 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import javax.xml.crypto.dsig.Transform;
 import java.io.File;
 import java.util.*;
 
@@ -487,12 +489,12 @@ public final class SetsGenerator extends JavaPlugin {
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Final equipment levels: " + equipmentLevels.toString());
         return equipmentLevels;
     }
-    public int getItemSlotFromPlayerEqByTag(Player player, String tag) {
-        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Starting getItemSlotFromPlayerEqByTag for player: " + player.getName() + " and tag: " + tag);
+    public int getItemSlotFromPlayerEqByTag(Player player, String tag,String transactionID) {
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Starting getItemSlotFromPlayerEqByTag for player: " + player.getName() + " and tag: " + tag,transactionID);
 
         // Usuwamy wszystko poza podstawową nazwą tagu
         String cleanTag = tag.split(":")[0].trim(); // Oczyszczenie tagu z dodatkowych informacji i spacji
-        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "getItemSlotFromPlayerEqByTag Using clean tag: " + cleanTag);
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "getItemSlotFromPlayerEqByTag Using clean tag: " + cleanTag,transactionID);
 
         // Przechodzi przez wszystkie przedmioty w ekwipunku gracza
         ItemStack[] inventoryItems = player.getInventory().getContents();
@@ -505,15 +507,15 @@ public final class SetsGenerator extends JavaPlugin {
             ItemMeta meta = item.getItemMeta();
             NamespacedKey key = new NamespacedKey(this, cleanTag);
             if (meta.getPersistentDataContainer().has(key, PersistentDataType.INTEGER)) {
-                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Found clean tag '" + cleanTag + "' in item at slot " + i);
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Found clean tag '" + cleanTag + "' in item at slot " + i,transactionID);
                 return i; // Zwraca slot, w którym znajduje się przedmiot
             }
         }
 
-        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Clean tag '" + cleanTag + "' not found in any items.");
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Clean tag '" + cleanTag + "' not found in any items.",transactionID);
         return -1; // Jeśli tag nie zostanie znaleziony, zwróć -1
     }
-    public ItemStack getItemFromPlayerEqByTag(Player player, String tag) {
+    public ItemStack getItemFromPlayerEqByTag(Player player, String tag,String transactionID) {
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Starting getItemFromPlayerEqByTag for player: " + player.getName() + " and tag: " + tag);
         String cleanTag = tag.split(":")[0].trim(); // Oczyszczenie tagu z dodatkowych informacji i spacji
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "getItemFromPlayerEqByTag Using clean tag: " + cleanTag);
@@ -578,8 +580,65 @@ public final class SetsGenerator extends JavaPlugin {
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Player " + player.getName() + " has all required items.");
         return true;
     }
-    public boolean checkAndRemoveItems(Player player, Map<ItemStack, Integer> requiredItems) {
-        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Checking if player " + player.getName() + " has all required items. requiredItems: "+requiredItems);
+    public void upgradeItem(Player player, String tag, int newLevel, String transactionID){
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "SetsGenerator.upgradeItem called. player: "+player.getName()+", tag:"+tag+", newLevel: "+newLevel);
+        ItemStack itemToUpgrade = getItemFromPlayerEqByTag(player,tag,transactionID);
+        int slot = getItemSlotFromPlayerEqByTag(player,tag,transactionID);
+        ItemStack newItem = null;
+        switch (itemToUpgrade.getType()) {
+            case LEATHER_HELMET:
+                newItem = itemFactory.createHelmet(newLevel);
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new helmet with level " + newLevel,transactionID);
+                break;
+            case DIAMOND_SWORD:
+                newItem = itemFactory.createSword(newLevel);
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new sword with level " + newLevel,transactionID);
+                break;
+            case MAGMA_CREAM:
+                newItem = itemFactory.createTalisman(newLevel);
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new talisman with level " + newLevel,transactionID);
+                break;
+            case LEATHER_LEGGINGS:
+                newItem = itemFactory.createLeggings(newLevel);
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new leggings with level " + newLevel,transactionID);
+                break;
+            case ELYTRA:
+                newItem = itemFactory.createChestplate(newLevel);
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new chestplate with level " + newLevel,transactionID);
+                break;
+            case LEATHER_BOOTS:
+                newItem = itemFactory.createBoots(newLevel);
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new boots with level " + newLevel,transactionID);
+                break;
+            default:
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: This item type cannot be upgraded.",transactionID);
+                player.sendMessage(ChatColor.RED + "This item cannot be upgraded.");
+                return;
+        }
+
+        if (newItem == null) {
+            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: newItem is null, upgrade failed.");
+            player.sendMessage(ChatColor.RED + "Failed to create upgraded item.");
+            return;
+        }
+        // Ustawiamy nowy przedmiot w slocie gracza
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Setting upgraded item in player's inventory at slot " + slot,transactionID);
+        player.getInventory().setItem(slot, newItem);
+
+        // Opcjonalnie można wymusić aktualizację ekwipunku (w niektórych przypadkach pomocne)
+        player.updateInventory();
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Player inventory updated.",transactionID);
+        // Dodatkowa weryfikacja
+        ItemStack checkItem = player.getInventory().getItem(slot);
+        if (checkItem != null && checkItem.equals(newItem)) {
+            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Upgrade successful. New item is now in the slot.",transactionID);
+            fileManager.updatePlayerEquipmentLevel(player.getUniqueId(),tag,newLevel, transactionID);
+        } else {
+            pluginLogger.log(PluginLogger.LogLevel.WARNING, "EventManager.onPlayerClick: Upgrade attempt did not reflect in player's inventory. Check itemFactory and item creation methods.",transactionID);
+        }
+    }
+    public boolean checkAndRemoveItems(Player player, Map<ItemStack, Integer> requiredItems,String transactionID) {
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Checking if player " + player.getName() + " has all required items. requiredItems: "+requiredItems,transactionID);
 
         Inventory inventory = player.getInventory();
 
@@ -589,7 +648,7 @@ public final class SetsGenerator extends JavaPlugin {
             int requiredAmount = entry.getValue();
 
             if (!inventory.containsAtLeast(requiredItem, requiredAmount)) {
-                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Player " + player.getName() + " does not have enough of: " + requiredItem);
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Player " + player.getName() + " does not have enough of: " + requiredItem,transactionID);
                 return false;
             }
         }
@@ -600,11 +659,11 @@ public final class SetsGenerator extends JavaPlugin {
             int requiredAmount = entry.getValue();
             requiredItem.setAmount(requiredAmount);
 
-            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Removing " + requiredAmount + " of " + requiredItem + " from player " + player.getName());
+            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Removing " + requiredAmount + " of " + requiredItem + " from player " + player.getName(),transactionID);
             inventory.removeItem(requiredItem);
         }
 
-        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "All required items removed for player " + player.getName());
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "All required items removed for player " + player.getName(),transactionID);
         return true;
     }
     public boolean checkAndRemoveItemsOld(Player player, Map<ItemStack, Integer> requiredItems) {

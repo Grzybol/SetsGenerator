@@ -117,13 +117,13 @@ public class FileManager {
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Data config saved for player: " + playerId);
     }
 
-    public void updatePlayerEquipmentLevel(UUID playerId, String tag, int newLevel) {
+    public void updatePlayerEquipmentLevel(UUID playerId, String tag, int newLevel,String transactionID) {
         String path = "players." + playerId.toString() + "." + tag;
-        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Updating equipment level for player: " + playerId + ", tag: " + tag + ", new level: " + newLevel);
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Updating equipment level for player: " + playerId + ", tag: " + tag + ", new level: " + newLevel,transactionID);
 
         dataConfig.set(path, newLevel);
         saveDataConfig();
-        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Data config updated and saved for player: " + playerId + ", tag: " + tag);
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Data config updated and saved for player: " + playerId + ", tag: " + tag,transactionID);
     }
 
     private void saveDataConfig() {

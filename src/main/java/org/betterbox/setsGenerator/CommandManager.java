@@ -19,13 +19,14 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class CommandManager implements CommandExecutor, TabCompleter {
 
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final PluginLogger pluginLogger;
-
+    private final String[] tags = {"chestplate_level", "leggings_level", "helmet_level", "boots_level", "talisman_level", "sword_level"};
     public CommandManager(JavaPlugin plugin, ConfigManager configManager,PluginLogger pluginLogger) {
         this.plugin = plugin;
         this.configManager = configManager;
@@ -36,6 +37,11 @@ public class CommandManager implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        String transactionID = UUID.randomUUID().toString();
+        if (!command.getName().equalsIgnoreCase("sg")) return false;
+        if(!sender.isOp()){
+            return false;
+        }
         boolean isPlayer = false;
         Player player = null;
         if (sender instanceof Player) {
@@ -44,7 +50,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         }else{
             isPlayer=false;
         }
-        if (!command.getName().equalsIgnoreCase("sg")) return false;
+
 
         if (args.length < 1) {
             sender.sendMessage(ChatColor.RED + "Usage: /sg <reloadconfig|spawnnpc>");
@@ -70,13 +76,72 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                     ((SetsGenerator) plugin).getFileManager().saveItemStackToFile(args[1].toLowerCase(), player.getItemInHand());
                 }
                 break;
+            case "upgradeitem":
+                String input = args[3]; // np. args[3] = "42"
+                int value;
+                try {
+                    value = Integer.parseInt(input);
+                    // Teraz w "value" znajduje się wartość całkowita, np. 42
+                } catch (NumberFormatException e) {
+                    // Jeśli nie uda się sparsować (np. input nie jest liczbą),
+                    // tutaj można obsłużyć błąd, np. wyświetlić komunikat
+                    System.out.println("Please provide a level number.");
+                    break;
+                }
+                Player playerToUpgrade = Bukkit.getPlayer(args[1]);
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.OnCommand upgradeItem, playerToUpgrade: "+playerToUpgrade);
+                assert playerToUpgrade != null;
+                ((SetsGenerator) plugin).upgradeItem(playerToUpgrade,getTagFromInput(args[2]),value,transactionID);
+                break;
             default:
-                sender.sendMessage(ChatColor.RED + "Unknown subcommand. Use: /sg <reloadconfig|spawnnpc>");
+                sender.sendMessage(ChatColor.RED + "Unknown subcommand. Use: /sg <reloadconfig|spawnnpc|info|upgradeItem>");
                 break;
         }
 
         return true;
     }
+
+    public String getTagFromInput(String input) {
+        if (input == null) {
+            return null;
+        }
+
+        String lowerInput = input.toLowerCase();
+        String resultTag;
+
+        switch (lowerInput) {
+            case "chest":
+            case "elytra":
+                resultTag = "chestplate_level";
+                break;
+            case "helmet":
+            case "head":
+                resultTag = "helmet_level";
+                break;
+            case "leggings":
+            case "leg":
+            case "legs":
+                resultTag = "leggings_level";
+                break;
+            case "boots":
+                resultTag = "boots_level";
+                break;
+            case "talisman":
+                resultTag = "talisman_level";
+                break;
+            case "sword":
+                resultTag = "sword_level";
+                break;
+            default:
+                // Gdy nie pasuje żaden z powyższych przypadków
+                // możesz zwrócić np. null albo jakiś domyślny tag
+                resultTag = null;
+                break;
+        }
+
+        return resultTag;
+    }
+
 
     private void reloadConfig(CommandSender sender) {
         if (!sender.hasPermission("setsGenerator.admin")) {
@@ -153,6 +218,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
             if ("reloadconfig".startsWith(args[0].toLowerCase())) suggestions.add("reloadconfig");
             if ("spawnnpc".startsWith(args[0].toLowerCase())) suggestions.add("spawnnpc");
             if ("saveitem".startsWith(args[0].toLowerCase())) suggestions.add("saveitem");
+            if ("upgradeItem".startsWith(args[0].toLowerCase())) suggestions.add("upgradeItem");
         }
 
         return suggestions;
