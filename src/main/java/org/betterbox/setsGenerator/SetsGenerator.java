@@ -6,7 +6,10 @@ import org.betterbox.elasticBuffer.ElasticBufferAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
+import org.bukkit.World;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Villager;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -48,7 +51,7 @@ public final class SetsGenerator extends JavaPlugin {
     private Map<Integer,Map<ItemStack,Integer>> upgradeLists= new HashMap<>();;
     private final String[] tags = {"chestplate_level", "leggings_level", "helmet_level", "boots_level", "talisman_level", "sword_level"};
     private int loadedLevels;
-
+    private Placeholders placeholdersManager;
 
     @Override
     public void onEnable() {
@@ -69,7 +72,25 @@ public final class SetsGenerator extends JavaPlugin {
         itemFactory = new ItemFactory(this,this,pluginLogger);
         guiManager = new GuiManager(this, itemFactory,pluginLogger);
         getServer().getPluginManager().registerEvents(new EventManager(this,guiManager,itemFactory,this,pluginLogger,fileManager), this);
-
+        placeholdersManager = new Placeholders(this,configManager);
+        if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            boolean success = placeholdersManager.register();
+            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "SetsGenerator: Placeholders zostały zarejestrowane w PlaceholderAPI. success="+success);
+        } else {
+            pluginLogger.log(PluginLogger.LogLevel.WARNING, "SetsGenerator: Warning: PlaceholderAPI not found, placeholders will NOT be available.");
+        }
+        NamespacedKey key = new NamespacedKey(this, "SetsGeneratorShop");
+        for (World world : Bukkit.getWorlds()) {
+            for (Entity entity : world.getEntitiesByClass(Villager.class)) {
+                Villager villager = (Villager) entity;
+                if (villager.getPersistentDataContainer().has(key, PersistentDataType.STRING)) {
+                    // Ustaw ponownie właściwości NPC
+                    villager.setInvulnerable(true);
+                    villager.setCollidable(false);
+                    villager.setAI(false);
+                }
+            }
+        }
     }
 
 
@@ -489,6 +510,128 @@ public final class SetsGenerator extends JavaPlugin {
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Final equipment levels: " + equipmentLevels.toString());
         return equipmentLevels;
     }
+    public String getPlayerEquipmentSummary(Player player) {
+        if (player == null) {
+            return "Player not found";
+        }
+
+        // Pobieranie poziomów z poszczególnych części ekwipunku
+        int helmetLevel = getHelmetLevel(player);
+        int chestplateLevel = getChestplateLevel(player);
+        int leggingsLevel = getLeggingsLevel(player);
+        int bootsLevel = getBootsLevel(player);
+        int talismanLevel = getTalismanLevel(player);
+        int swordLevel = getSwordLevel(player);
+        double avgLevel = getAverageEquipmentLevel(player);
+        double maxHealth = player.getMaxHealth(); // Założenie, że jest taka metoda w API
+
+        // Formatowanie stringa z poziomami i ikonami
+        return String.format("❤ %s | ⭐ %.2f | 🗡 %d | ⛨ %d/%d/%d/%d | ☯ %d",
+                maxHealth,
+                avgLevel,
+                swordLevel,
+                helmetLevel,
+                chestplateLevel,
+                leggingsLevel,
+                bootsLevel,
+                talismanLevel);
+    }
+
+    public int getHelmetLevel(Player player) {
+        ItemStack helmet = player.getInventory().getHelmet();
+        return getItemLevel(helmet, "helmet_level");
+    }
+
+    public int getChestplateLevel(Player player) {
+        ItemStack chestplate = player.getInventory().getChestplate();
+        return getItemLevel(chestplate, "chestplate_level");
+    }
+
+    public int getLeggingsLevel(Player player) {
+        ItemStack leggings = player.getInventory().getLeggings();
+        return getItemLevel(leggings, "leggings_level");
+    }
+
+    public int getBootsLevel(Player player) {
+        ItemStack boots = player.getInventory().getBoots();
+        return getItemLevel(boots, "boots_level");
+    }
+
+    public int getTalismanLevel(Player player) {
+        // Przykład, jak można by szukać talizmanu w ekwipunku
+        ItemStack talisman = findItemInInventory(player, "talisman");
+        return getItemLevel(talisman, "talisman_level");
+    }
+
+    public int getSwordLevel(Player player) {
+        // Przykład, jak można by szukać miecza w ekwipunku
+        ItemStack sword = findItemInInventory(player, "sword");
+        return getItemLevel(sword, "sword_level");
+    }
+
+    private int getItemLevel(ItemStack item, String tag) {
+        if (item == null || !item.hasItemMeta()) return 0;
+
+        ItemMeta meta = item.getItemMeta();
+        NamespacedKey key = new NamespacedKey(this, tag);
+        if (meta.getPersistentDataContainer().has(key, PersistentDataType.INTEGER)) {
+            return meta.getPersistentDataContainer().get(key, PersistentDataType.INTEGER);
+        }
+        return 0;
+    }
+
+    private ItemStack findItemInInventory(Player player, String itemType) {
+        for (ItemStack item : player.getInventory().getContents()) {
+            if (item != null && item.getType().toString().toLowerCase().contains(itemType.toLowerCase())) {
+                return item;
+            }
+        }
+        return null;
+    }
+    public double getAverageEquipmentLevel(Player player) {
+        if (player == null) {
+            pluginLogger.log(PluginLogger.LogLevel.ERROR, "Player object is null.");
+            return 0.0;
+        }
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Starting getAverageEquipmentLevel for player: " + player.getName());
+
+        // Klucze dla PersistentDataContainer
+        String[] tags = {"chestplate_level", "leggings_level", "helmet_level", "boots_level", "talisman_level", "sword_level"};
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Initialized tags: " + Arrays.toString(tags));
+
+        // Lista, która będzie przechowywać poziomy wszystkich istniejących tagów
+        List<Integer> levels = new ArrayList<>();
+
+        // Przeglądaj ekwipunek gracza (inventory i założone przedmioty)
+        List<ItemStack> allItems = new ArrayList<>();
+        allItems.addAll(Arrays.asList(player.getInventory().getContents())); // Ekwipunek
+        allItems.addAll(Arrays.asList(player.getInventory().getArmorContents())); // Założony pancerz
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Collected all items from inventory and armor.");
+
+        for (ItemStack item : allItems) {
+            if (item == null || !item.hasItemMeta()) continue;
+
+            ItemMeta meta = item.getItemMeta();
+            for (String tag : tags) {
+                NamespacedKey key = new NamespacedKey(this, tag);
+                if (meta.getPersistentDataContainer().has(key, PersistentDataType.INTEGER)) {
+                    int level = meta.getPersistentDataContainer().get(key, PersistentDataType.INTEGER);
+                    levels.add(level);
+                    pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Added level " + level + " for tag '" + tag + "' from item: " + item.toString());
+                }
+            }
+        }
+
+        if (levels.isEmpty()) {
+            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "No levels found, returning average as 0.");
+            return 0.0;
+        }
+
+        double average = levels.stream().mapToInt(Integer::intValue).average().getAsDouble();
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Calculated average level: " + average);
+        return average;
+    }
+
     public int getItemSlotFromPlayerEqByTag(Player player, String tag,String transactionID) {
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Starting getItemSlotFromPlayerEqByTag for player: " + player.getName() + " and tag: " + tag,transactionID);
 

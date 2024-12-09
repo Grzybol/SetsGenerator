@@ -7,10 +7,12 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerDropItemEvent;
@@ -204,16 +206,39 @@ public class EventManager implements Listener {
         return false;
     }
 
+    /*
     // Blokowanie wyrzucania przedmiotów
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerDropItem(PlayerDropItemEvent event) {
+        Player player = event.getPlayer();
+
+        // Zapisanie stanu ekwipunku przed jakąkolwiek modyfikacją
+        ItemStack[] backupInv = player.getInventory().getContents().clone();
+        ItemStack[] backupArmor = player.getInventory().getArmorContents().clone();
+
         ItemStack item = event.getItemDrop().getItemStack();
         if (hasRestrictedTag(item)) {
+            // Anulujemy event - uniemożliwiamy wyrzucenie przedmiotu
             event.setCancelled(true);
-            Player player = event.getPlayer();
+
+            // Przywracamy stan ekwipunku do tego sprzed próby upuszczenia
+            player.getInventory().setContents(backupInv);
+            player.getInventory().setArmorContents(backupArmor);
+
+            // Wymuszamy aktualizację ekwipunku po stronie klienta
+            player.updateInventory();
             player.sendMessage(ChatColor.RED + "You cannot drop this item!");
+
+            // Po 1 ticku ponownie przywracamy stan ekwipunku i aktualizujemy go
+            Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+                player.getInventory().setContents(backupInv);
+                player.getInventory().setArmorContents(backupArmor);
+                player.updateInventory();
+            }, 1L);
         }
     }
+
+    */
 
     // Blokowanie przenoszenia przedmiotów między ekwipunkami
     @EventHandler
@@ -235,17 +260,52 @@ public class EventManager implements Listener {
             }
         }
     }
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onInventoryDrag(InventoryDragEvent event) {
+        if (!(event.getWhoClicked() instanceof Player)) return;
+        Player player = (Player) event.getWhoClicked();
+        ItemStack item = event.getOldCursor();
 
-    @EventHandler
+        if (hasRestrictedTag(item)) {
+            // Jeśli którakolwiek ze slotów, do których gracz próbuje przeciągnąć przedmiot
+            // nie należy do ekwipunku gracza, anuluj zdarzenie
+            for (int slot : event.getRawSlots()) {
+                // W ekwipunku gracza sloty są liczone od zera do jego rozmiaru.
+                // Sloty powyżej rozmiaru własnego ekwipunku to zwykle górne GUI (np. skrzynka)
+                if (slot >= player.getInventory().getSize()) {
+                    event.setCancelled(true);
+                    player.sendMessage(ChatColor.RED + "You cannot drag this restricted item here!");
+                    break;
+                }
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent event) {
         String transactionID = UUID.randomUUID().toString();
         Player player = (Player) event.getWhoClicked();
+
         if (player.hasMetadata("handledUpgradeClick")) {
             pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Event.onPlayerDeath event already handled! victim: "+player.getName(),transactionID);
             return;
         }
         player.setMetadata("handledUpgradeClick", new FixedMetadataValue(plugin, true));
         Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, () -> player.removeMetadata("handledUpgradeClick", plugin), 1L);
+
+        ItemStack clickedItem = event.getCurrentItem();
+        Inventory clickedInventory = event.getClickedInventory();
+        // Sprawdź czy przedmiot jest restrykcyjny
+        if (hasRestrictedTag(clickedItem)) {
+            // Sprawdź, czy gracze próbują przesunąć przedmiot do ekwipunku innego niż własny
+            // BottomInventory to ekwipunek gracza, top (clickedInventory inny niż player) to zwykle skrzynka.
+            if (!clickedInventory.equals(player.getInventory())) {
+                event.setCancelled(true);
+                player.sendMessage(ChatColor.RED + "You cannot move this restricted item here!");
+            }
+        }
+
+
 
         // Sprawdzamy tytuł okna, aby rozpoznać nasze GUI
         String title = event.getView().getTitle();
@@ -254,7 +314,7 @@ public class EventManager implements Listener {
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: title " + title+", isSelectUpgradeGui: "+isSelectUpgradeGui+", isConfirmUpgradeGui: "+isConfirmUpgradeGui,transactionID);
         // Jeśli to jedno z naszych GUI, zablokuj wyciąganie przedmiotów
         if (isSelectUpgradeGui || isConfirmUpgradeGui) {
-            ItemStack clickedItem = event.getCurrentItem();
+
             if (clickedItem == null || clickedItem.getType() == Material.AIR) {
                 return; // Brak interakcji
             }
@@ -341,7 +401,7 @@ public class EventManager implements Listener {
                             newItem = itemFactory.createLeggings(newLevel);
                             pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new leggings with level " + newLevel,transactionID);
                             break;
-                        case LEATHER_CHESTPLATE:
+                        case ELYTRA:
                             newItem = itemFactory.createChestplate(newLevel);
                             pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new chestplate with level " + newLevel,transactionID);
                             break;

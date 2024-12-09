@@ -190,23 +190,6 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         villager.getPersistentDataContainer().set(key, PersistentDataType.STRING, "SetsGenerator Shop");
 
         sender.sendMessage(ChatColor.GREEN + "NPC Shop spawned successfully.");
-
-
-        /*
-        Villager villager = player.getWorld().spawn(location, Villager.class, npc -> {
-            npc.setAI(false);
-            npc.setInvulnerable(true);
-            npc.setCustomName(ChatColor.GOLD + "" + ChatColor.BOLD + "Shop");
-            npc.setCustomNameVisible(true);
-            npc.setSilent(true);
-            npc.setCollidable(false);
-            npc.getPersistentDataContainer().set(key, PersistentDataType.STRING, "SetsGenerator Shop");
-        });
-
-        sender.sendMessage(ChatColor.GREEN + "NPC Shop spawned successfully.");
-
-         */
-
     }
 
     @Override

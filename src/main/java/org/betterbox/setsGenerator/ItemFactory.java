@@ -197,11 +197,13 @@ public class ItemFactory {
                     AttributeModifier.Operation.ADD_NUMBER, EquipmentSlot.HAND);
             meta.addAttributeModifier(Attribute.GENERIC_ATTACK_DAMAGE, damageModifier);
         }
-
+        // Ustawienie przedmiotu jako niezniszczalnego (na końcu metody, przed item.setItemMeta(meta);)
+        meta.setUnbreakable(true);
         // Przypisanie metadanych do przedmiotu
         item.setItemMeta(meta);
         return item;
     }
+
     private void addArmorAttributes(ItemMeta meta, EquipmentSlot slot, int level, int baseProtection, int healthBonus, int protectionPerLevel) {
         // Dodajemy atrybut zdrowia
         AttributeModifier healthModifier = new AttributeModifier(

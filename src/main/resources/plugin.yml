@@ -2,7 +2,7 @@ name: SetsGenerator
 version: '${project.version}'
 main: org.betterbox.setsGenerator.SetsGenerator
 api-version: '1.18'
-load: STARTUP
+load: POSTWORLD
 authors: [ Grzybol ]
 softdepend:
   - ElasticBuffer
