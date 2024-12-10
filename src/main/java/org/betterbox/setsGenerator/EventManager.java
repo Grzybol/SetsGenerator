@@ -4,6 +4,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
 import org.bukkit.event.EventHandler;
@@ -11,6 +14,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
+import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
@@ -39,16 +43,18 @@ public class EventManager implements Listener {
     private final SetsGenerator setsGenerator;
     private final PluginLogger pluginLogger;
     private final FileManager fileManager;
+    private final ConfigManager configManager;
 
     // Mapa do przechowywania wybranego przedmiotu przez gracza pomiędzy GUI "Select Upgrade" a "Confirm Upgrade"
     private final Map<UUID, String> playerSelectedUpgradeItem = new HashMap<>();
     //private final Map<UUID, ItemStack> playerSelectedUpgradeItem = new HashMap<>();
 
-    public EventManager(JavaPlugin plugin, GuiManager guiManager, ItemFactory itemFactory, SetsGenerator setsGenerator, PluginLogger pluginLogger, FileManager fileManager) {
+    public EventManager(JavaPlugin plugin, GuiManager guiManager, ItemFactory itemFactory, SetsGenerator setsGenerator, PluginLogger pluginLogger, FileManager fileManager, ConfigManager configManager) {
         this.plugin = plugin;
         this.pluginLogger = pluginLogger;
         this.fileManager = fileManager;
         this.guiManager = guiManager;
+        this.configManager = configManager;
         this.setsGenerator = setsGenerator;
         this.itemFactory = itemFactory;
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -153,7 +159,7 @@ public class EventManager implements Listener {
     @EventHandler
     public void onEntityDamage(EntityDamageByEntityEvent event) {
         if (event.getEntity() instanceof Villager villager) {
-            NamespacedKey key = new NamespacedKey(plugin, "SetsGeneratorShop");
+            NamespacedKey key = setsGenerator.getKey();
             if (villager.getPersistentDataContainer().has(key, PersistentDataType.STRING)) {
                 // To jest nasz NPC - anulujemy obrażenia
                 event.setCancelled(true);
@@ -277,6 +283,20 @@ public class EventManager implements Listener {
                     player.sendMessage(ChatColor.RED + "You cannot drag this restricted item here!");
                     break;
                 }
+            }
+        }
+    }
+    @EventHandler
+    public void onEntityLoad(EntitySpawnEvent event) {
+        String transactionID = UUID.randomUUID().toString();
+        if (event.getEntity() instanceof Villager) {
+            Villager villager = (Villager) event.getEntity();
+            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onEntityLoad: Villager spawned, villager.getPersistentDataContainer(): "+villager.getPersistentDataContainer()+", UUID: "+villager.getUniqueId()+", displayname: "+villager.getCustomName(), UUID.randomUUID().toString());
+            NamespacedKey key = new NamespacedKey(plugin, "SetsGeneratorShop");
+            if (villager.getPersistentDataContainer().has(key, PersistentDataType.STRING) || configManager.getVillagerUUIDs().contains(villager.getUniqueId()) || (villager.getCustomName() != null && villager.getCustomName().equals(ChatColor.GOLD + "" + ChatColor.BOLD + "Equipment upgrades"))) {
+                configManager.setupVillager(villager,key,transactionID);
+            }else{
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onEntityLoad: Villager nie jest na liście naszych villagerów");
             }
         }
     }

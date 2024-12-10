@@ -67,7 +67,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                 break;
 
             case "spawnnpc":
-                spawnNPC(sender, args);
+                spawnNPC(sender, args,transactionID);
                 break;
 
             case "saveitem":
@@ -153,7 +153,8 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         sender.sendMessage(ChatColor.GREEN + "Configuration reloaded successfully.");
     }
 
-    private void spawnNPC(CommandSender sender, String[] args) {
+    private void spawnNPC(CommandSender sender, String[] args,String transactionID) {
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "CommandManager.spawnNPC, sender: "+sender.getName(),transactionID);
         if (!sender.hasPermission("setsGenerator.admin")) {
             sender.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
             return;
@@ -172,23 +173,10 @@ public class CommandManager implements CommandExecutor, TabCompleter {
         NamespacedKey key = new NamespacedKey(plugin, "SetsGeneratorShop");
 
         Villager villager = (Villager) player.getWorld().spawnEntity(location, EntityType.VILLAGER);
-
-
-// Ustawienie właściwości NPC
-        villager.setCustomName(ChatColor.GOLD + "" + ChatColor.BOLD + "Equipment upgrades");
-        villager.setCustomNameVisible(true);
-        AttributeInstance attribute = villager.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED);
-        if (attribute != null) {
-            attribute.setBaseValue(0);
-        }
-        villager.setAI(true);
-        villager.setInvulnerable(true); // Uczyń wieśniaka nieśmiertelnym
-        villager.setCollidable(false);
-        villager.isInvisible();
-
-// Zapisz informację o tym, że to nasz NPC w PersistentDataContainer
-        villager.getPersistentDataContainer().set(key, PersistentDataType.STRING, "SetsGenerator Shop");
-
+        configManager.setupVillager(villager,key,transactionID);
+        // Zapisz UUID villagera
+        configManager.getVillagerUUIDs().add(villager.getUniqueId());
+        configManager.saveVillagerUUIDs();
         sender.sendMessage(ChatColor.GREEN + "NPC Shop spawned successfully.");
     }
 

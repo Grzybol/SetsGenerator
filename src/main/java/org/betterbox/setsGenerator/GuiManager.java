@@ -15,6 +15,7 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Map;
+import java.util.UUID;
 
 public class GuiManager {
     private final JavaPlugin plugin;
@@ -70,6 +71,8 @@ public class GuiManager {
     }
 
     public void openConfirmationGui(Player player, ItemStack selectedItem) {
+        String transactionID = UUID.randomUUID().toString();
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "GuiManagert.openConfirmationGui for player: " + player.getName()+", selectedItem: "+selectedItem.toString(),transactionID);
         // Tworzenie GUI potwierdzającego
         Inventory confirmationGui = Bukkit.createInventory(null, 9, ChatColor.RED + "Confirm Upgrade");
 
@@ -80,6 +83,7 @@ public class GuiManager {
             greenMeta.displayName(Component.text("Confirm", NamedTextColor.GREEN));
             greenMeta.getPersistentDataContainer().set(new NamespacedKey(plugin, "Confirm"), PersistentDataType.INTEGER, 1);
             greenWool.setItemMeta(greenMeta);
+            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "GuiManagert.openConfirmationGui for player: " + player.getName()+" confirmed",transactionID);
         }
 
 // Czerwona wełna (anulowanie)

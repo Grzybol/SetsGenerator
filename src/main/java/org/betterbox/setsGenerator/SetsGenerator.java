@@ -52,9 +52,11 @@ public final class SetsGenerator extends JavaPlugin {
     private final String[] tags = {"chestplate_level", "leggings_level", "helmet_level", "boots_level", "talisman_level", "sword_level"};
     private int loadedLevels;
     private Placeholders placeholdersManager;
+    private final NamespacedKey key = new NamespacedKey(this, "SetsGeneratorShop");
 
     @Override
     public void onEnable() {
+
         // Plugin startup logic
         folderPath = getDataFolder().getAbsolutePath();
         File dataFolder = getDataFolder();
@@ -65,13 +67,11 @@ public final class SetsGenerator extends JavaPlugin {
         pluginLogger = new PluginLogger(folderPath, defaultLogLevels,this);
         fileManager = new FileManager(getDataFolder().getAbsolutePath(),this,this,pluginLogger);
         configManager = new ConfigManager(this, pluginLogger, folderPath,this);
-
-        configManager.ReloadConfig();
         loadElasticBuffer();
         new CommandManager(this, configManager,pluginLogger);
         itemFactory = new ItemFactory(this,this,pluginLogger);
         guiManager = new GuiManager(this, itemFactory,pluginLogger);
-        getServer().getPluginManager().registerEvents(new EventManager(this,guiManager,itemFactory,this,pluginLogger,fileManager), this);
+        getServer().getPluginManager().registerEvents(new EventManager(this,guiManager,itemFactory,this,pluginLogger,fileManager,configManager), this);
         placeholdersManager = new Placeholders(this,configManager);
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
             boolean success = placeholdersManager.register();
@@ -79,20 +79,44 @@ public final class SetsGenerator extends JavaPlugin {
         } else {
             pluginLogger.log(PluginLogger.LogLevel.WARNING, "SetsGenerator: Warning: PlaceholderAPI not found, placeholders will NOT be available.");
         }
-        NamespacedKey key = new NamespacedKey(this, "SetsGeneratorShop");
-        for (World world : Bukkit.getWorlds()) {
-            for (Entity entity : world.getEntitiesByClass(Villager.class)) {
-                Villager villager = (Villager) entity;
-                if (villager.getPersistentDataContainer().has(key, PersistentDataType.STRING)) {
-                    // Ustaw ponownie właściwości NPC
+        // Opóźnienie wykonania o 1 sekundę (20 tików)
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            String transactionID = UUID.randomUUID().toString();
+            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Processing villagers by UUIDs",transactionID);
+            List<UUID> villagerUUIDs = configManager.getVillagerUUIDs();
+            for (UUID uuid : villagerUUIDs) {
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Processing villager with UUID: " + uuid,transactionID);
+                Entity entity = Bukkit.getEntity(uuid);
+                if (entity instanceof Villager) {
+                    Villager villager = (Villager) entity;
+                    // Ponowne ustawienie właściwości NPC
                     villager.setInvulnerable(true);
                     villager.setCollidable(false);
-                    villager.setAI(false);
+                    villager.setAI(true); // Upewnij się, że AI jest ustawione na true
+                } else {
+                    // Jeśli encja nie istnieje lub nie jest Villagerem
+                    pluginLogger.log(PluginLogger.LogLevel.WARNING, "Villager not found for UUID: " + uuid+", entity: "+entity,transactionID);
                 }
             }
-        }
-    }
+            for (World world : Bukkit.getWorlds()) {
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Processing villagers in world: " + world.getName(),transactionID);
+                for (Entity entity : world.getEntities()) {
+                    if (entity instanceof Villager) {
+                        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Processing villager: " + entity.getUniqueId()+", persistentDataContainer: "+ Arrays.toString(entity.getPersistentDataContainer().getKeys().toArray()),transactionID);
+                        Villager villager = (Villager) entity;
 
+                        if (villager.getPersistentDataContainer().has(key, PersistentDataType.STRING)) {
+                            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Setting up villager: " + villager.getUniqueId(),transactionID);
+                            configManager.setupVillager(villager,key,transactionID);
+                        }
+                    }
+                }
+            }
+        }, 100L);// Opóźnienie o 20 tików (1 sekunda)
+    }
+    public NamespacedKey getKey() {
+        return key;
+    }
 
     private void loadElasticBuffer(){
         try{
@@ -593,7 +617,7 @@ public final class SetsGenerator extends JavaPlugin {
             pluginLogger.log(PluginLogger.LogLevel.ERROR, "Player object is null.");
             return 0.0;
         }
-        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Starting getAverageEquipmentLevel for player: " + player.getName());
+        pluginLogger.log(PluginLogger.LogLevel.PLACEHOLDER, "Starting getAverageEquipmentLevel for player: " + player.getName());
 
         // Klucze dla PersistentDataContainer
         String[] tags = {"chestplate_level", "leggings_level", "helmet_level", "boots_level", "talisman_level", "sword_level"};
@@ -606,7 +630,7 @@ public final class SetsGenerator extends JavaPlugin {
         List<ItemStack> allItems = new ArrayList<>();
         allItems.addAll(Arrays.asList(player.getInventory().getContents())); // Ekwipunek
         allItems.addAll(Arrays.asList(player.getInventory().getArmorContents())); // Założony pancerz
-        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Collected all items from inventory and armor.");
+        pluginLogger.log(PluginLogger.LogLevel.PLACEHOLDER, "Collected all items from inventory and armor.");
 
         for (ItemStack item : allItems) {
             if (item == null || !item.hasItemMeta()) continue;
@@ -617,18 +641,18 @@ public final class SetsGenerator extends JavaPlugin {
                 if (meta.getPersistentDataContainer().has(key, PersistentDataType.INTEGER)) {
                     int level = meta.getPersistentDataContainer().get(key, PersistentDataType.INTEGER);
                     levels.add(level);
-                    pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Added level " + level + " for tag '" + tag + "' from item: " + item.toString());
+                    pluginLogger.log(PluginLogger.LogLevel.PLACEHOLDER, "Added level " + level + " for tag '" + tag + "' from item: " + item.toString());
                 }
             }
         }
 
         if (levels.isEmpty()) {
-            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "No levels found, returning average as 0.");
+            pluginLogger.log(PluginLogger.LogLevel.PLACEHOLDER, "No levels found, returning average as 0.");
             return 0.0;
         }
 
         double average = levels.stream().mapToInt(Integer::intValue).average().getAsDouble();
-        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Calculated average level: " + average);
+        pluginLogger.log(PluginLogger.LogLevel.PLACEHOLDER, "Calculated average level: " + average);
         return average;
     }
 

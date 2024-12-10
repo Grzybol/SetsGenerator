@@ -1,10 +1,16 @@
 package org.betterbox.setsGenerator;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Villager;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -14,12 +20,14 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ConfigManager {
     private JavaPlugin plugin;
     private final PluginLogger pluginLogger;
     private File configFile = null;
     List<String> logLevels = null;
+    private List<UUID> villagerUUIDs = new ArrayList<>();
 
     Set<PluginLogger.LogLevel> enabledLogLevels;
     private final SetsGenerator setsGenerator;
@@ -33,7 +41,43 @@ public class ConfigManager {
         pluginLogger.log(PluginLogger.LogLevel.DEBUG,"ConfigManager called");
         pluginLogger.log(PluginLogger.LogLevel.DEBUG,"ConfigManager: calling configureLogger");
         configureLogger();
+        loadVillagerUUIDs();
 
+    }
+    public void setupVillager(Villager villager, NamespacedKey key,String transactionID){
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "setupVillager: " + villager.getUniqueId()+", persistentDataContainer: "+villager.getPersistentDataContainer().toString(),transactionID);
+        // Ponowne ustawienie właściwości NPC
+        villager.setInvulnerable(true);
+        villager.setCollidable(false);
+        villager.setAI(true);
+        villager.setCustomName(ChatColor.GOLD + "" + ChatColor.BOLD + "Equipment upgrades");
+        villager.setCustomNameVisible(true);
+        AttributeInstance attribute = villager.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED);
+        if (attribute != null) {
+            attribute.setBaseValue(0);
+        }
+        // Zapisz informację o tym, że to nasz NPC w PersistentDataContainer
+        villager.getPersistentDataContainer().set(key, PersistentDataType.STRING, "SetsGeneratorShop");
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onEntityLoad: Villager properties set",transactionID);
+    }
+    public void saveVillagerUUIDs() {
+        List<String> uuidStrings = villagerUUIDs.stream()
+                .map(UUID::toString)
+                .collect(Collectors.toList());
+        plugin.getConfig().set("villagers", uuidStrings);
+        plugin.saveConfig();
+    }
+    public void loadVillagerUUIDs() {
+        List<String> uuidStrings = plugin.getConfig().getStringList("villagers");
+        villagerUUIDs = uuidStrings.stream()
+                .map(UUID::fromString)
+                .collect(Collectors.toList());
+    }
+    public List<UUID> getVillagerUUIDs() {
+        return villagerUUIDs;
+    }
+    public void setVillagerUUIDs(List<UUID> villagerUUIDs) {
+        this.villagerUUIDs = villagerUUIDs;
     }
     private void CreateExampleConfigFile(String folderPath){
         File exampleConfigFile = new File(folderPath, "config.yml");
