@@ -495,7 +495,7 @@ public class EventManager implements Listener {
                     int currentLevel = setsGenerator.getItemLevel(upgradeItem);
                     pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: currentLevel: " + currentLevel,transactionID);
                     int newLevel=0;
-                    if(currentLevel!=0){
+                    if(currentLevel!=-1){
                         newLevel = currentLevel + 1;
                     }
                     pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: newLevel: " + newLevel,transactionID);
