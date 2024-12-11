@@ -6,7 +6,7 @@
 
     <groupId>org.betterbox</groupId>
     <artifactId>SetsGenerator</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.104-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>SetsGenerator</name>
@@ -35,8 +35,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
-                    <source>9</source>
-                    <target>9</target>
+                    <source>16</source>
+                    <target>16</target>
                 </configuration>
             </plugin>
 
@@ -101,9 +101,20 @@
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
         </repository>
+        <repository>
+            <id>placeholderapi</id>
+            <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
+        </repository>
     </repositories>
 
     <dependencies>
+
+        <dependency>
+            <groupId>me.clip</groupId>
+            <artifactId>placeholderapi</artifactId>
+            <version>2.11.4</version>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>com.github.Grzybol</groupId>
             <artifactId>ElasticBuffer</artifactId>

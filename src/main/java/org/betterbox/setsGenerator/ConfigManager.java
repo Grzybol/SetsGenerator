@@ -1,9 +1,16 @@
 package org.betterbox.setsGenerator;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Villager;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -13,12 +20,14 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ConfigManager {
     private JavaPlugin plugin;
     private final PluginLogger pluginLogger;
     private File configFile = null;
     List<String> logLevels = null;
+    private List<UUID> villagerUUIDs = new ArrayList<>();
 
     Set<PluginLogger.LogLevel> enabledLogLevels;
     private final SetsGenerator setsGenerator;
@@ -32,7 +41,43 @@ public class ConfigManager {
         pluginLogger.log(PluginLogger.LogLevel.DEBUG,"ConfigManager called");
         pluginLogger.log(PluginLogger.LogLevel.DEBUG,"ConfigManager: calling configureLogger");
         configureLogger();
+        loadVillagerUUIDs();
 
+    }
+    public void setupVillager(Villager villager, NamespacedKey key,String transactionID){
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "setupVillager: " + villager.getUniqueId()+", persistentDataContainer: "+villager.getPersistentDataContainer().toString(),transactionID);
+        // Ponowne ustawienie właściwości NPC
+        villager.setInvulnerable(true);
+        villager.setCollidable(false);
+        villager.setAI(true);
+        villager.setCustomName(ChatColor.GOLD + "" + ChatColor.BOLD + "Equipment upgrades");
+        villager.setCustomNameVisible(true);
+        AttributeInstance attribute = villager.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED);
+        if (attribute != null) {
+            attribute.setBaseValue(0);
+        }
+        // Zapisz informację o tym, że to nasz NPC w PersistentDataContainer
+        villager.getPersistentDataContainer().set(key, PersistentDataType.STRING, "SetsGeneratorShop");
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onEntityLoad: Villager properties set",transactionID);
+    }
+    public void saveVillagerUUIDs() {
+        List<String> uuidStrings = villagerUUIDs.stream()
+                .map(UUID::toString)
+                .collect(Collectors.toList());
+        plugin.getConfig().set("villagers", uuidStrings);
+        plugin.saveConfig();
+    }
+    public void loadVillagerUUIDs() {
+        List<String> uuidStrings = plugin.getConfig().getStringList("villagers");
+        villagerUUIDs = uuidStrings.stream()
+                .map(UUID::fromString)
+                .collect(Collectors.toList());
+    }
+    public List<UUID> getVillagerUUIDs() {
+        return villagerUUIDs;
+    }
+    public void setVillagerUUIDs(List<UUID> villagerUUIDs) {
+        this.villagerUUIDs = villagerUUIDs;
     }
     private void CreateExampleConfigFile(String folderPath){
         File exampleConfigFile = new File(folderPath, "config.yml");
@@ -57,7 +102,7 @@ public class ConfigManager {
         ReloadConfig();
     }
     public void ReloadConfig(){
-        String folderPath = plugin.getDataFolder().getAbsolutePath();
+        //String folderPath = plugin.getDataFolder().getAbsolutePath();
         pluginLogger.log(PluginLogger.LogLevel.DEBUG,"ConfigManager: ReloadConfig called");
         // Odczytanie ustawień log_level z pliku konfiguracyjnego
         configFile = new File(plugin.getDataFolder(), "config.yml");
@@ -103,11 +148,17 @@ public class ConfigManager {
         setsGenerator.setLeggingHealthBonus(getConfigInt("leggingHealthBonus", 8));
         setsGenerator.setBootsHealthBonus(getConfigInt("bootsHealthBonus", 6));
         setsGenerator.setHelmetHealthBonus(getConfigInt("helmetHealthBonus", 4));
+        setsGenerator.setStartColor(getConfigString("startColor", "255,255,255"));
+        setsGenerator.setEndColor(getConfigString("endColor", "0,0,0"));
+        setsGenerator.setStartColorIncreasePerLevel(getConfigString("startColorIncreasePerLevel", "-15,-15,-15"));
+        setsGenerator.setStartColorIncreasePer10Levels(getConfigString("startColorIncreasePer10Levels", "0,-50,-50"));
+        setsGenerator.setEndColorIncreasePerLevel(getConfigString("endColorIncreasePerLevel", "50,5,5"));
 
 
         pluginLogger.log(PluginLogger.LogLevel.DEBUG,"ConfigManager.ReloadConfig calling pluginLogger.setEnabledLogLevels(enabledLogLevels) with parameters: "+ Arrays.toString(enabledLogLevels.toArray()));
         // Ustawienie aktywnych poziomów logowania w loggerze
         pluginLogger.setEnabledLogLevels(enabledLogLevels);
+        loadUpgradeItems();
     }
     private String getConfigString(String path, String defaultValue) {
         if (plugin.getConfig().contains(path)) {
@@ -211,5 +262,58 @@ public class ConfigManager {
         } catch (IOException e) {
             pluginLogger.log(PluginLogger.LogLevel.ERROR, "Error while updating config file: " + e.getMessage());
         }
+    }
+    private void loadUpgradeItems() {
+        plugin.reloadConfig();
+        int loadedLevels=0;
+
+        ConfigurationSection section = plugin.getConfig().getConfigurationSection("upgradeItemsSection");
+        if (section == null) {
+            pluginLogger.log(PluginLogger.LogLevel.ERROR, "Config section 'upgradeItemsSection' not found.");
+            return;
+        }
+
+        for (String key : section.getKeys(false)) {
+            try {
+                int id = Integer.parseInt(key);
+                Map<ItemStack, Integer> items = new HashMap<>();
+                List<String> itemList = section.getStringList(key);
+
+                for (String item : itemList) {
+                    String[] parts = item.split(" ");
+                    if (parts.length == 2) {
+                        String itemIdentifier = parts[0];
+                        int amount = Integer.parseInt(parts[1]);
+
+                        ItemStack itemStack = null;
+                        if (itemIdentifier.endsWith(".yml")) {
+                            // Wczytywanie niestandardowego przedmiotu z pliku
+                            itemStack = setsGenerator.getFileManager().loadItemStackFromFile(itemIdentifier);
+                        } else {
+                            // Wczytywanie standardowego przedmiotu Minecraft
+                            Material material = Material.matchMaterial(itemIdentifier);
+                            if (material != null) {
+                                itemStack = new ItemStack(material, amount);
+                            }
+                        }
+
+                        if (itemStack != null) {
+                            items.put(itemStack, amount);
+                        } else {
+                            pluginLogger.log(PluginLogger.LogLevel.ERROR, "Invalid material or file for: " + itemIdentifier);
+                        }
+                    } else {
+                        pluginLogger.log(PluginLogger.LogLevel.ERROR, "Invalid item format: " + item);
+                    }
+                }
+
+                setsGenerator.getUpgradeLists().put(id, items);
+                loadedLevels++;
+            } catch (NumberFormatException e) {
+                pluginLogger.log(PluginLogger.LogLevel.ERROR, "Invalid key format in 'upgradeItemsSection': " + key);
+            }
+        }
+        setsGenerator.setLoadedLevels(loadedLevels);
+        pluginLogger.log(PluginLogger.LogLevel.INFO, "Upgrade items loaded successfully. loadedLevels: "+loadedLevels);
     }
 }
