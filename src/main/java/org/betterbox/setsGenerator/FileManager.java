@@ -103,7 +103,7 @@ public class FileManager {
         return equipmentLevels;
     }
 
-    public void savePlayerEquipmentLevels(UUID playerId, Map<String, Integer> equipmentLevels) {
+    public void savePlayerEquipmentLevels(UUID playerId, Map<String, Integer> equipmentLevels, String transactionID) {
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Saving equipment levels for player: " + playerId);
 
         String path = "players." + playerId.toString();

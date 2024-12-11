@@ -49,7 +49,7 @@ public final class SetsGenerator extends JavaPlugin {
     private GuiManager guiManager;
     private Map<ItemStack,Integer> upgradeItems= new HashMap<>();
     private Map<Integer,Map<ItemStack,Integer>> upgradeLists= new HashMap<>();;
-    private final String[] tags = {"chestplate_level", "leggings_level", "helmet_level", "boots_level", "talisman_level", "sword_level"};
+    //private final String[] tags = {"chestplate_level", "leggings_level", "helmet_level", "boots_level", "talisman_level", "sword_level"};
     private int loadedLevels;
     private Placeholders placeholdersManager;
     private final NamespacedKey key = new NamespacedKey(this, "SetsGeneratorShop");
@@ -117,6 +117,14 @@ public final class SetsGenerator extends JavaPlugin {
     public NamespacedKey getKey() {
         return key;
     }
+    private final List<String> tags = new ArrayList<>(Arrays.asList(
+            "chestplate_level",
+            "leggings_level",
+            "helmet_level",
+            "boots_level",
+            "talisman_level",
+            "sword_level"
+    ));
 
     private void loadElasticBuffer(){
         try{
@@ -728,9 +736,12 @@ public final class SetsGenerator extends JavaPlugin {
             return new HashMap<>();
         }
     }
-    public boolean hasRequiredItems(Player player, Map<ItemStack, Integer> requiredItems) {
-        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Checking if player " + player.getName() + " has all required items");
-
+    public boolean hasRequiredItems(Player player, Map<ItemStack, Integer> requiredItems,String transactionID) {
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Checking if player " + player.getName() + " has all required items",transactionID);
+        if (requiredItems == null || requiredItems.isEmpty()) {
+            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Required items map is empty. No items to check for player " + player.getName(),transactionID);
+            return true; // Brak wymaganych przedmiotów
+        }
         Inventory inventory = player.getInventory();
 
         // Sprawdź, czy gracz posiada wszystkie wymagane przedmioty w odpowiednich ilościach
@@ -739,12 +750,12 @@ public final class SetsGenerator extends JavaPlugin {
             int requiredAmount = entry.getValue();
 
             if (!inventory.containsAtLeast(requiredItem, requiredAmount)) {
-                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Player " + player.getName() + " does not have enough of: " + requiredItem);
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Player " + player.getName() + " does not have enough of: " + requiredItem,transactionID);
                 return false; // Brak wystarczającej ilości danego przedmiotu
             }
         }
 
-        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Player " + player.getName() + " has all required items.");
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Player " + player.getName() + " has all required items.",transactionID);
         return true;
     }
     public void upgradeItem(Player player, String tag, int newLevel, String transactionID){
@@ -806,7 +817,10 @@ public final class SetsGenerator extends JavaPlugin {
     }
     public boolean checkAndRemoveItems(Player player, Map<ItemStack, Integer> requiredItems,String transactionID) {
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Checking if player " + player.getName() + " has all required items. requiredItems: "+requiredItems,transactionID);
-
+        if (requiredItems == null || requiredItems.isEmpty()) {
+            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Required items map is empty. No items to check or remove for player " + player.getName(), transactionID);
+            return true;
+        }
         Inventory inventory = player.getInventory();
 
         // Sprawdzenie posiadanych przedmiotów
@@ -833,37 +847,6 @@ public final class SetsGenerator extends JavaPlugin {
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "All required items removed for player " + player.getName(),transactionID);
         return true;
     }
-    public boolean checkAndRemoveItemsOld(Player player, Map<ItemStack, Integer> requiredItems) {
-        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Checking if player " + player.getName() + " has all required items. requiredItems: "+requiredItems);
-
-        Inventory inventory = player.getInventory();
-
-        // Najpierw sprawdź, czy gracz posiada wszystkie wymagane przedmioty w odpowiednich ilościach
-        for (Map.Entry<ItemStack, Integer> entry : requiredItems.entrySet()) {
-            ItemStack requiredItem = entry.getKey();
-            int requiredAmount = entry.getValue();
-
-            if (!inventory.containsAtLeast(requiredItem, requiredAmount)) {
-                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Player " + player.getName() + " does not have enough of: " + requiredItem);
-                // Jeśli nie ma wystarczającej ilości któregokolwiek przedmiotu, zwróć false
-                return false;
-            }
-        }
-
-        // Jeśli wszystkie przedmioty są dostępne, usuń je z ekwipunku
-        for (Map.Entry<ItemStack, Integer> entry : requiredItems.entrySet()) {
-            ItemStack requiredItem = entry.getKey();
-            int requiredAmount = entry.getValue();
-
-            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Removing " + requiredAmount + " of " + requiredItem + " from player " + player.getName());
-            // Usuń przedmioty z ekwipunku
-            inventory.removeItem(new ItemStack(requiredItem.getType(), requiredAmount));
-        }
-
-        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "All required items removed for player " + player.getName());
-        // Wszystkie wymagane przedmioty zostały usunięte, zwróć true
-        return true;
-    }
 
     public int getItemLevel(ItemStack item) {
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Starting getItemLevel for item: " + (item != null ? item.toString() : "null"));
@@ -881,7 +864,7 @@ public final class SetsGenerator extends JavaPlugin {
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Processing item meta: " + meta.toString());
 
         //String[] tags = {"chestplate_level", "leggings_level", "helmet_level", "boots_level", "talisman_level", "sword_level"};
-        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Initialized tags: " + Arrays.toString(tags));
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Initialized tags: " + Arrays.toString(tags.toArray()));
 
         for (String tag : tags) {
             NamespacedKey key = new NamespacedKey(this, tag);
@@ -897,13 +880,26 @@ public final class SetsGenerator extends JavaPlugin {
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "No tags found, returning level 0.");
         return 0;
     }
+    public boolean isFromUpgradeGUI(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) {
+            return false;
+        }
+
+        ItemMeta meta = item.getItemMeta();
+        NamespacedKey key = new NamespacedKey(this, "isForUpgradeGUI");
+
+        return meta.getPersistentDataContainer().has(key, PersistentDataType.INTEGER);
+    }
     public boolean hasAnyTag(ItemStack item) {
         if (item == null || !item.hasItemMeta()) {
             return false;
         }
 
         ItemMeta meta = item.getItemMeta();
-        String[] tags = {"isForUpgradeGUI", "isForUpgradeGUI","Cancel","Confirm"};
+
+        tags.add("isForUpgradeGUI");
+        tags.add("Confirm");
+        tags.add("Cancel");
 
         for (String tag : tags) {
             NamespacedKey key = new NamespacedKey(this, tag);

@@ -11,6 +11,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -244,5 +245,44 @@ public class ItemFactory {
         item.setItemMeta(meta);
         return item;
     }
+    public ItemStack getNextLevel(ItemStack item,boolean hasRequiredItems) {
+        // Sprawdzenie, czy item jest null lub nie posiada metadanych
+        if (item == null || !item.hasItemMeta()) {
+            return null;
+        }
+
+        ItemMeta meta = item.getItemMeta();
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+
+        // Sprawdzenie typu przedmiotu i odpowiedniego tagu poziomu
+        if (item.getType() == Material.DIAMOND_SWORD && pdc.has(new NamespacedKey(plugin, "sword_level"), PersistentDataType.INTEGER)) {
+            int currentLevel = pdc.get(new NamespacedKey(plugin, "sword_level"), PersistentDataType.INTEGER);
+            return createSword(currentLevel + 1, true, hasRequiredItems);
+        }
+        else if (item.getType() == Material.MAGMA_CREAM && pdc.has(new NamespacedKey(plugin, "talisman_level"), PersistentDataType.INTEGER)) {
+            int currentLevel = pdc.get(new NamespacedKey(plugin, "talisman_level"), PersistentDataType.INTEGER);
+            return createTalisman(currentLevel + 1, true, hasRequiredItems);
+        }
+        else if (item.getType() == Material.LEATHER_LEGGINGS && pdc.has(new NamespacedKey(plugin, "leggings_level"), PersistentDataType.INTEGER)) {
+            int currentLevel = pdc.get(new NamespacedKey(plugin, "leggings_level"), PersistentDataType.INTEGER);
+            return createLeggings(currentLevel + 1, true, hasRequiredItems);
+        }
+        else if (item.getType() == Material.LEATHER_HELMET && pdc.has(new NamespacedKey(plugin, "helmet_level"), PersistentDataType.INTEGER)) {
+            int currentLevel = pdc.get(new NamespacedKey(plugin, "helmet_level"), PersistentDataType.INTEGER);
+            return createHelmet(currentLevel + 1, true, hasRequiredItems);
+        }
+        else if (item.getType() == Material.LEATHER_BOOTS && pdc.has(new NamespacedKey(plugin, "boots_level"), PersistentDataType.INTEGER)) {
+            int currentLevel = pdc.get(new NamespacedKey(plugin, "boots_level"), PersistentDataType.INTEGER);
+            return createBoots(currentLevel + 1, true, hasRequiredItems);
+        }
+        else if (item.getType() == Material.ELYTRA && pdc.has(new NamespacedKey(plugin, "chestplate_level"), PersistentDataType.INTEGER)) {
+            int currentLevel = pdc.get(new NamespacedKey(plugin, "chestplate_level"), PersistentDataType.INTEGER);
+            return createChestplate(currentLevel + 1, true, hasRequiredItems);
+        }
+
+        // Jeśli przedmiot nie jest Twoim niestandardowym przedmiotem, zwróć null
+        return null;
+    }
+
 
 }

@@ -14,8 +14,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class GuiManager {
     private final JavaPlugin plugin;
@@ -27,8 +26,54 @@ public class GuiManager {
         this.itemFactory = itemFactory;
         this.pluginLogger=pluginLogger;
     }
+    private final List<String> tags = new ArrayList<>(Arrays.asList(
+            "chestplate_level",
+            "leggings_level",
+            "helmet_level",
+            "boots_level",
+            "talisman_level",
+            "sword_level"
+    ));
+    public void openLevelUpGui(Player player,String transactionID) {
+        // Pobierz poziomy przedmiotów gracza
+        SetsGenerator setsGenerator = (SetsGenerator) plugin;
+        Map<String, Integer> equipmentLevels = setsGenerator.getPlayerEquipmentLevels(player);
 
-    public void openLevelUpGui(Player player) {
+        // Tworzenie GUI
+        Inventory gui = Bukkit.createInventory(null, 9, ChatColor.GREEN + "Select Upgrade");
+
+        // Przeglądaj każdy tag z listy
+        for (String tag : tags) {
+            String itemType = tag; // Zakładam, że itemType odpowiada tagowi
+
+            if (equipmentLevels.containsKey(tag)) {
+                // Gracz posiada ten tag, pobierz aktualny poziom
+                int currentLevel = equipmentLevels.get(tag);
+
+                // Sprawdź, czy gracz ma wymagane przedmioty do ulepszenia
+                boolean hasRequired = setsGenerator.hasRequiredItems(player, setsGenerator.getUpgradeItems(currentLevel + 1),transactionID);
+
+                // Utwórz przedmiot z kolejnym poziomem
+                ItemStack upgradedItem = createUpgradedItem(itemType, currentLevel + 1, hasRequired);
+                if (upgradedItem != null) {
+                    gui.addItem(upgradedItem);
+                }
+            } else {
+                boolean hasRequired = setsGenerator.hasRequiredItems(player, setsGenerator.getUpgradeItems(0),transactionID);
+                // Gracz nie posiada tego tagu, utwórz przedmiot z poziomem 0 i flagą true
+                ItemStack upgradedItem = createUpgradedItem(itemType, 0, hasRequired);
+                if (upgradedItem != null) {
+                    gui.addItem(upgradedItem);
+                }
+            }
+        }
+
+        // Otwórz GUI dla gracza
+        player.openInventory(gui);
+    }
+
+    public void openLevelUpGuiOld(Player player) {
+        String transactionID = UUID.randomUUID().toString();
         // Pobierz poziomy przedmiotów gracza
         SetsGenerator setsGenerator = (SetsGenerator) plugin;
         Map<String, Integer> equipmentLevels = setsGenerator.getPlayerEquipmentLevels(player);
@@ -41,7 +86,7 @@ public class GuiManager {
             String itemType = entry.getKey();
             int currentLevel = entry.getValue();
 
-            ItemStack upgradedItem = createUpgradedItem(itemType, currentLevel + 1,setsGenerator.hasRequiredItems(player,setsGenerator.getUpgradeItems(currentLevel + 1)));
+            ItemStack upgradedItem = createUpgradedItem(itemType, currentLevel + 1,setsGenerator.hasRequiredItems(player,setsGenerator.getUpgradeItems(currentLevel + 1),transactionID));
             if (upgradedItem != null) {
                 gui.addItem(upgradedItem);
             }

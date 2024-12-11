@@ -6,7 +6,7 @@
 
     <groupId>org.betterbox</groupId>
     <artifactId>SetsGenerator</artifactId>
-    <version>1.0.88-SNAPSHOT</version>
+    <version>1.0.104-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>SetsGenerator</name>
@@ -108,6 +108,7 @@
     </repositories>
 
     <dependencies>
+
         <dependency>
             <groupId>me.clip</groupId>
             <artifactId>placeholderapi</artifactId>

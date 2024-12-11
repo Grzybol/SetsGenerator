@@ -69,29 +69,9 @@ public class EventManager implements Listener {
             "talisman_level",
             "sword_level"
     };
-
-    /*
     @EventHandler
     public void onPlayerInteractWithNPC(PlayerInteractEntityEvent event) {
-        if (event.getRightClicked() instanceof Villager villager) {
-            // Sprawdzenie, czy NPC ma odpowiedni tag w metadanych
-            if (villager.hasMetadata("SetsGeneratorShop")) {
-                for (MetadataValue meta : villager.getMetadata("SetsGeneratorShop")) {
-                    if (meta.asString().equals("SetsGenerator Shop") && meta.getOwningPlugin() == this.plugin) {
-                        Player player = event.getPlayer();
-                        player.sendMessage(ChatColor.GREEN + "You have interacted with the Shop NPC!");
-                        guiManager.openLevelUpGui(player);
-                        event.setCancelled(true); // Zatrzymuje dalszą interakcję z NPC
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-     */
-    @EventHandler
-    public void onPlayerInteractWithNPC(PlayerInteractEntityEvent event) {
+        String transactionID = UUID.randomUUID().toString();
         if (event.getRightClicked() instanceof Villager villager) {
             NamespacedKey key = new NamespacedKey(plugin, "SetsGeneratorShop");
             if (villager.getPersistentDataContainer().has(key, PersistentDataType.STRING)) {
@@ -99,16 +79,21 @@ public class EventManager implements Listener {
                     villager.remove();
                 }
                 Player player = event.getPlayer();
+                Map<String, Integer> currentEqLevels = setsGenerator.getPlayerEquipmentLevels(player);
+
+
                 player.sendMessage(ChatColor.GREEN + "You have interacted with the Shop NPC!");
-                guiManager.openLevelUpGui(player);
+                guiManager.openLevelUpGui(player,transactionID);
                 event.setCancelled(true);
             }
         }
     }
+    /*
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         UUID playerId = player.getUniqueId();
+        Map<String, Integer> currentEqLevels = setsGenerator.getPlayerEquipmentLevels(player);
 
         if (!fileManager.playerExists(playerId)) {
             Map<String, Integer> defaultLevels = new HashMap<>();
@@ -156,6 +141,87 @@ public class EventManager implements Listener {
             fileManager.savePlayerEquipmentLevels(playerId, equipmentLevels);
         }
     }
+
+     */
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        String transactionID = UUID.randomUUID().toString();
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerJoin: Player joined",transactionID);
+        Player player = event.getPlayer();
+        UUID playerId = player.getUniqueId();
+
+        // Sprawdzenie, czy gracz istnieje w bazie danych
+        if (!fileManager.playerExists(playerId)) {
+            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerJoin: New player joined",transactionID);
+            // **Nowy gracz**: Inicjalizacja poziomów na 0 i przydzielenie ekwipunku
+            Map<String, Integer> defaultLevels = new HashMap<>();
+            for (String tag : tags) {
+                defaultLevels.put(tag, 0);
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerJoin: tag: "+tag,transactionID);
+            }
+
+            fileManager.savePlayerEquipmentLevels(playerId, defaultLevels,transactionID);
+
+            // Przygotowanie mapy funkcji do tworzenia przedmiotów na poziomie 0
+            Map<String, Function<Integer, ItemStack>> creationMethods = new HashMap<>();
+            creationMethods.put("chestplate_level", level -> itemFactory.createChestplate(level));
+            creationMethods.put("leggings_level", level -> itemFactory.createLeggings(level));
+            creationMethods.put("helmet_level", level -> itemFactory.createHelmet(level));
+            creationMethods.put("boots_level", level -> itemFactory.createBoots(level));
+            creationMethods.put("talisman_level", level -> itemFactory.createTalisman(level));
+            creationMethods.put("sword_level", level -> itemFactory.createSword(level));
+
+            // Przydzielenie przedmiotów do ekwipunku gracza
+            for (String tag : tags) {
+                ItemStack item = creationMethods.get(tag).apply(0);
+                player.getInventory().addItem(item);
+            }
+
+            // Informacja dla gracza (opcjonalne)
+            player.sendMessage(ChatColor.GREEN + "Witaj w serwerze! Otrzymałeś podstawowe wyposażenie.");
+        } else {
+            Map<String, Integer> currentEqLevels = setsGenerator.getPlayerEquipmentLevels(player);
+            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerJoin: Existing player joined, player "+player.getName()+", currentEqLevels: "+currentEqLevels.toString(),transactionID);
+            // **Istniejący gracz**: Sprawdzenie obecnego ekwipunku i aktualizacja bazy danych
+            // Pobranie obecnych poziomów ekwipunku z gracza
+
+
+            // Zapisanie aktualnych poziomów ekwipunku do bazy danych
+            fileManager.savePlayerEquipmentLevels(playerId, currentEqLevels,transactionID);
+
+            // (Opcjonalnie) Synchronizacja ekwipunku gracza z poziomami w bazie danych
+            // Może to obejmować aktualizację przedmiotów w ekwipunku na podstawie poziomów
+            // Jeśli chcesz, aby ekwipunek gracza był zawsze zgodny z poziomami w bazie,
+            // możesz dodać poniższy fragment kodu.
+
+        /*
+        Map<String, Function<Integer, ItemStack>> creationMethods = new HashMap<>();
+        creationMethods.put("chestplate_level", level -> itemFactory.createChestplate(level));
+        creationMethods.put("leggings_level", level -> itemFactory.createLeggings(level));
+        creationMethods.put("helmet_level", level -> itemFactory.createHelmet(level));
+        creationMethods.put("boots_level", level -> itemFactory.createBoots(level));
+        creationMethods.put("talisman_level", level -> itemFactory.createTalisman(level));
+        creationMethods.put("sword_level", level -> itemFactory.createSword(level));
+
+        for (String tag : tags) {
+            int level = currentEqLevels.getOrDefault(tag, 0);
+            // Sprawdzanie, czy gracz ma przedmiot z tym tagiem
+            boolean hasItem = hasItemWithTag(player, tag);
+
+            if (!hasItem) {
+                // Dodanie brakującego przedmiotu na podstawie poziomu
+                player.getInventory().addItem(creationMethods.get(tag).apply(level));
+            }
+            // Opcjonalnie: aktualizacja przedmiotów, które już istnieją (np. zwiększenie poziomu)
+            // Można tutaj dodać dodatkową logikę, jeśli jest to potrzebne
+        }
+        */
+
+            // Informacja dla gracza (opcjonalne)
+            player.sendMessage(ChatColor.GREEN + "Witaj ponownie! Twoje wyposażenie zostało zaktualizowane.");
+        }
+    }
+
     @EventHandler
     public void onEntityDamage(EntityDamageByEntityEvent event) {
         if (event.getEntity() instanceof Villager villager) {
@@ -177,6 +243,7 @@ public class EventManager implements Listener {
         return false;
     }
 
+    /*
     @EventHandler
     public void onPlayerRespawn(PlayerRespawnEvent event) {
         Player player = event.getPlayer();
@@ -201,6 +268,8 @@ public class EventManager implements Listener {
             }
         }
     }
+
+     */
 
     private boolean hasRestrictedTag(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return false;
@@ -246,6 +315,7 @@ public class EventManager implements Listener {
 
     */
 
+    /*
     // Blokowanie przenoszenia przedmiotów między ekwipunkami
     @EventHandler
     public void onInventoryMoveItem(InventoryMoveItemEvent event) {
@@ -286,6 +356,8 @@ public class EventManager implements Listener {
             }
         }
     }
+
+     */
     @EventHandler
     public void onEntityLoad(EntitySpawnEvent event) {
         String transactionID = UUID.randomUUID().toString();
@@ -331,18 +403,23 @@ public class EventManager implements Listener {
         String title = event.getView().getTitle();
         boolean isSelectUpgradeGui = title.equalsIgnoreCase(ChatColor.GREEN + "Select Upgrade");
         boolean isConfirmUpgradeGui = title.equalsIgnoreCase(ChatColor.RED + "Confirm Upgrade");
-        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: title " + title+", isSelectUpgradeGui: "+isSelectUpgradeGui+", isConfirmUpgradeGui: "+isConfirmUpgradeGui,transactionID);
+        int selectedItemLevel = 0;
+        selectedItemLevel=setsGenerator.getItemLevel(clickedItem);
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: title " + title+", isSelectUpgradeGui: "+isSelectUpgradeGui+", isConfirmUpgradeGui: "+isConfirmUpgradeGui+", selectedItemLevel: "+selectedItemLevel,transactionID);
         // Jeśli to jedno z naszych GUI, zablokuj wyciąganie przedmiotów
         if (isSelectUpgradeGui || isConfirmUpgradeGui) {
 
             if (clickedItem == null || clickedItem.getType() == Material.AIR) {
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: clickedItem is null or AIR",transactionID);
                 return; // Brak interakcji
             }
             if(!setsGenerator.hasAnyTag(clickedItem)){
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: clickedItem has no tag",transactionID);
                 event.setCancelled(true);
                 return;
             }
-            if(setsGenerator.getItemLevel(clickedItem)>setsGenerator.getLoadedLevels()){
+            if(selectedItemLevel>setsGenerator.getLoadedLevels()){
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: clickedItem has higher level than loaded levels",transactionID);
                 event.setCancelled(true);
                 return;
             }
@@ -354,12 +431,29 @@ public class EventManager implements Listener {
                 String tag = setsGenerator.getTagFromItemstack(clickedItem);
                 // Zapamiętujemy wybrany przedmiot
                 playerSelectedUpgradeItem.put(player.getUniqueId(), tag);
-                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: player.getUniqueId()) " + player.getUniqueId()+", clickedItem: "+ clickedItem,transactionID);
-                if(!setsGenerator.hasRequiredItems(player,setsGenerator.getUpgradeItems(setsGenerator.getItemLevel(clickedItem)))){
-                    player.sendMessage(ChatColor.RED + "Not enough items to upgrade!");
-                    return;
+                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: player.getUniqueId()) " + player.getUniqueId()+", clickedItem: "+ clickedItem+", tag: "+tag,transactionID);
+
+                if(setsGenerator.isFromUpgradeGUI(clickedItem)){
+                    boolean hasRequiredItems = setsGenerator.hasRequiredItems(player, setsGenerator.getUpgradeItems(selectedItemLevel),transactionID);
+                    if(!hasRequiredItems){
+                        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Not enough items to upgrade! selectedItemLevel "+selectedItemLevel,transactionID);
+                        player.sendMessage(ChatColor.RED + "Not enough items to upgrade!");
+                        return;
+                    }
+                    pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: This item is from upgrade GUI!",transactionID);
+                    guiManager.openConfirmationGui(player, clickedItem);
+                }else {
+                    boolean hasRequiredItems = setsGenerator.hasRequiredItems(player, setsGenerator.getUpgradeItems(selectedItemLevel + 1),transactionID);
+                    if(!hasRequiredItems){
+                        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Not enough items to upgrade!",transactionID);
+                        player.sendMessage(ChatColor.RED + "Not enough items to upgrade!");
+                        return;
+                    }
+                    pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: This item is not from upgrade GUI!",transactionID);
+                    guiManager.openConfirmationGui(player, itemFactory.getNextLevel(clickedItem,hasRequiredItems));
+                    //player.sendMessage(ChatColor.RED + "This item cannot be upgraded.");
                 }
-                guiManager.openConfirmationGui(player, clickedItem);
+
             }
             // Jeśli to GUI "Confirm Upgrade"
             else if (isConfirmUpgradeGui) {
@@ -387,54 +481,99 @@ public class EventManager implements Listener {
 
                     // Znalezienie slotu, w którym znajduje się przedmiot do ulepszenia
                     int slot = setsGenerator.getItemSlotFromPlayerEqByTag(player,tag,transactionID);
-                    if (slot == -1) {
+                    /*if (slot == -1) {
                         // Jeżeli nie znaleziono przedmiotu w eq, można obsłużyć tę sytuację inaczej
                         player.sendMessage(ChatColor.RED + "Item to upgrade is not in your inventory.");
                         return;
                     }
 
+                     */
+
                     // Implementacja ulepszenia
                     ItemStack upgradeItem = setsGenerator.getItemFromPlayerEqByTag(player,tag,transactionID);
+
                     int currentLevel = setsGenerator.getItemLevel(upgradeItem);
-                    int newLevel = currentLevel + 1;
+                    pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: currentLevel: " + currentLevel,transactionID);
+                    int newLevel=0;
+                    if(currentLevel!=0){
+                        newLevel = currentLevel + 1;
+                    }
+                    pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: newLevel: " + newLevel,transactionID);
+
+
+
                     if(!setsGenerator.checkAndRemoveItems(player,setsGenerator.getUpgradeItems(newLevel),transactionID)){
                         player.sendMessage(ChatColor.RED + "Not enough items to upgrade!");
                         return;
                     }
-                    pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Calculated new level: " + newLevel,transactionID);
                     fileManager.updatePlayerEquipmentLevel(player.getUniqueId(),tag,newLevel,transactionID);
                     ItemStack newItem = null;
-                    switch (upgradeItem.getType()) {
-                        case LEATHER_HELMET:
-                            newItem = itemFactory.createHelmet(newLevel);
-                            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new helmet with level " + newLevel,transactionID);
-                            break;
-                        case DIAMOND_SWORD:
-                            newItem = itemFactory.createSword(newLevel);
-                            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new sword with level " + newLevel,transactionID);
-                            break;
-                        case MAGMA_CREAM:
-                            newItem = itemFactory.createTalisman(newLevel);
-                            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new talisman with level " + newLevel,transactionID);
-                            break;
-                        case LEATHER_LEGGINGS:
-                            newItem = itemFactory.createLeggings(newLevel);
-                            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new leggings with level " + newLevel,transactionID);
-                            break;
-                        case ELYTRA:
-                            newItem = itemFactory.createChestplate(newLevel);
-                            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new chestplate with level " + newLevel,transactionID);
-                            break;
-                        case LEATHER_BOOTS:
-                            newItem = itemFactory.createBoots(newLevel);
-                            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new boots with level " + newLevel,transactionID);
-                            break;
-                        default:
-                            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: This item type cannot be upgraded.",transactionID);
-                            player.sendMessage(ChatColor.RED + "This item cannot be upgraded.");
-                            return;
-                    }
 
+                    if(upgradeItem==null) {
+                        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: upgradeItem is null", transactionID);
+                        switch (tag) {
+                            case "helmet_level":
+                                newItem = itemFactory.createHelmet(newLevel);
+                                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new helmet with level " + newLevel, transactionID);
+                                break;
+                            case "sword_level":
+                                newItem = itemFactory.createSword(newLevel);
+                                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new sword with level " + newLevel, transactionID);
+                                break;
+                            case "talisman_level":
+                                newItem = itemFactory.createTalisman(newLevel);
+                                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new talisman with level " + newLevel, transactionID);
+                                break;
+                            case "leggings_level":
+                                newItem = itemFactory.createLeggings(newLevel);
+                                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new leggings with level " + newLevel, transactionID);
+                                break;
+                            case "chestplate_level":
+                                newItem = itemFactory.createChestplate(newLevel);
+                                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new chestplate with level " + newLevel, transactionID);
+                                break;
+                            case "boots_level":
+                                newItem = itemFactory.createBoots(newLevel);
+                                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new boots with level " + newLevel, transactionID);
+                                break;
+                            default:
+                                pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: This item type cannot be upgraded.", transactionID);
+                                player.sendMessage(ChatColor.RED + "This item cannot be upgraded.");
+                                return;
+                        }
+                    }else {
+                            switch (upgradeItem.getType()) {
+                                case LEATHER_HELMET:
+                                    newItem = itemFactory.createHelmet(newLevel);
+                                    pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new helmet with level " + newLevel, transactionID);
+                                    break;
+                                case DIAMOND_SWORD:
+                                    newItem = itemFactory.createSword(newLevel);
+                                    pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new sword with level " + newLevel, transactionID);
+                                    break;
+                                case MAGMA_CREAM:
+                                    newItem = itemFactory.createTalisman(newLevel);
+                                    pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new talisman with level " + newLevel, transactionID);
+                                    break;
+                                case LEATHER_LEGGINGS:
+                                    newItem = itemFactory.createLeggings(newLevel);
+                                    pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new leggings with level " + newLevel, transactionID);
+                                    break;
+                                case ELYTRA:
+                                    newItem = itemFactory.createChestplate(newLevel);
+                                    pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new chestplate with level " + newLevel, transactionID);
+                                    break;
+                                case LEATHER_BOOTS:
+                                    newItem = itemFactory.createBoots(newLevel);
+                                    pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new boots with level " + newLevel, transactionID);
+                                    break;
+                                default:
+                                    pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: This item type cannot be upgraded.", transactionID);
+                                    player.sendMessage(ChatColor.RED + "This item cannot be upgraded.");
+                                    return;
+                            }
+
+                    }
                     if (newItem == null) {
                         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: newItem is null, upgrade failed.");
                         player.sendMessage(ChatColor.RED + "Failed to create upgraded item.");
@@ -443,7 +582,24 @@ public class EventManager implements Listener {
 
 // Ustawiamy nowy przedmiot w slocie gracza
                     pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Setting upgraded item in player's inventory at slot " + slot,transactionID);
-                    player.getInventory().setItem(slot, newItem);
+                    if(slot==-1){
+                        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Slot "+slot,transactionID);
+                        Inventory inventory = player.getInventory();
+                        int firstEmpty = inventory.firstEmpty();
+                        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: firstEmpty "+firstEmpty,transactionID);
+                        if(firstEmpty==-1){
+                            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: No empty slot to put upgraded item.",transactionID);
+                            player.sendMessage(ChatColor.RED + "No empty slot to put upgraded item.");
+                            return;
+                        }else {
+                            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Setting upgraded item in player's inventory at slot " + firstEmpty,transactionID);
+                            player.getInventory().setItem(firstEmpty, newItem);
+                            return;
+                        }
+                    }else {
+                        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Setting upgraded item in player's inventory at slot " + slot,transactionID);
+                        player.getInventory().setItem(slot, newItem);
+                    }
 
 // Opcjonalnie można wymusić aktualizację ekwipunku (w niektórych przypadkach pomocne)
                     player.updateInventory();
