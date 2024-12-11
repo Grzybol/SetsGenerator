@@ -853,11 +853,11 @@ public final class SetsGenerator extends JavaPlugin {
 
         if (item == null) {
             pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Item is null, returning level 0.");
-            return 0;
+            return -1;
         }
         if (!item.hasItemMeta()) {
             pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Item has no metadata, returning level 0.");
-            return 0;
+            return -1;
         }
 
         ItemMeta meta = item.getItemMeta();
@@ -877,8 +877,8 @@ public final class SetsGenerator extends JavaPlugin {
             }
         }
 
-        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "No tags found, returning level 0.");
-        return 0;
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "No tags found, returning level -1.");
+        return -1;
     }
     public boolean isFromUpgradeGUI(ItemStack item) {
         if (item == null || !item.hasItemMeta()) {
