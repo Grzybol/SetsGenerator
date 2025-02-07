@@ -20,10 +20,12 @@ public class GuiManager {
     private final JavaPlugin plugin;
     private final ItemFactory itemFactory;
     private final PluginLogger pluginLogger;
+    private final Lang lang;
 
-    public GuiManager(JavaPlugin plugin, ItemFactory itemFactory,PluginLogger pluginLogger) {
+    public GuiManager(JavaPlugin plugin, ItemFactory itemFactory,PluginLogger pluginLogger, Lang lang) {
         this.plugin = plugin;
         this.itemFactory = itemFactory;
+        this.lang=lang;
         this.pluginLogger=pluginLogger;
     }
     private final List<String> tags = new ArrayList<>(Arrays.asList(
@@ -40,7 +42,7 @@ public class GuiManager {
         Map<String, Integer> equipmentLevels = setsGenerator.getPlayerEquipmentLevels(player);
 
         // Tworzenie GUI
-        Inventory gui = Bukkit.createInventory(null, 9, ChatColor.GREEN + "Select Upgrade");
+        Inventory gui = Bukkit.createInventory(null, 9, ChatColor.GREEN + lang.selectUpgradeMessage);
 
         // Przeglądaj każdy tag z listy
         for (String tag : tags) {
@@ -79,7 +81,7 @@ public class GuiManager {
         Map<String, Integer> equipmentLevels = setsGenerator.getPlayerEquipmentLevels(player);
 
         // Tworzenie GUI
-        Inventory gui = Bukkit.createInventory(null, 9, ChatColor.GREEN + "Select Upgrade");
+        Inventory gui = Bukkit.createInventory(null, 9, ChatColor.GREEN + lang.selectUpgradeMessage);
 
         // Dodaj przedmioty +1 poziom
         for (Map.Entry<String, Integer> entry : equipmentLevels.entrySet()) {
@@ -119,14 +121,14 @@ public class GuiManager {
         String transactionID = UUID.randomUUID().toString();
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "GuiManagert.openConfirmationGui for player: " + player.getName()+", selectedItem: "+selectedItem.toString(),transactionID);
         // Tworzenie GUI potwierdzającego
-        Inventory confirmationGui = Bukkit.createInventory(null, 9, ChatColor.RED + "Confirm Upgrade");
+        Inventory confirmationGui = Bukkit.createInventory(null, 9, ChatColor.RED + lang.confirmUpgradeMessage);
 
         // Zielona wełna (akceptacja)
         ItemStack greenWool = new ItemStack(Material.GREEN_WOOL);
         ItemMeta greenMeta = greenWool.getItemMeta();
         if (greenMeta != null) {
             greenMeta.displayName(Component.text("Confirm", NamedTextColor.GREEN));
-            greenMeta.getPersistentDataContainer().set(new NamespacedKey(plugin, "Confirm"), PersistentDataType.INTEGER, 1);
+            greenMeta.getPersistentDataContainer().set(new NamespacedKey(plugin, lang.confirmMessage), PersistentDataType.INTEGER, 1);
             greenWool.setItemMeta(greenMeta);
             pluginLogger.log(PluginLogger.LogLevel.DEBUG, "GuiManagert.openConfirmationGui for player: " + player.getName()+" confirmed",transactionID);
         }
@@ -136,7 +138,7 @@ public class GuiManager {
         ItemMeta redMeta = redWool.getItemMeta();
         if (redMeta != null) {
             redMeta.displayName(Component.text("Cancel", NamedTextColor.RED));
-            redMeta.getPersistentDataContainer().set(new NamespacedKey(plugin, "Cancel"), PersistentDataType.INTEGER, 1);
+            redMeta.getPersistentDataContainer().set(new NamespacedKey(plugin, lang.cancelMessage), PersistentDataType.INTEGER, 1);
             redWool.setItemMeta(redMeta);
         }
 

@@ -53,6 +53,7 @@ public final class SetsGenerator extends JavaPlugin {
     private int loadedLevels;
     private Placeholders placeholdersManager;
     private final NamespacedKey key = new NamespacedKey(this, "SetsGeneratorShop");
+    private Lang lang;
 
     @Override
     public void onEnable() {
@@ -67,11 +68,12 @@ public final class SetsGenerator extends JavaPlugin {
         pluginLogger = new PluginLogger(folderPath, defaultLogLevels,this);
         fileManager = new FileManager(getDataFolder().getAbsolutePath(),this,this,pluginLogger);
         configManager = new ConfigManager(this, pluginLogger, folderPath,this);
+        Lang lang = new Lang(this,pluginLogger);
         loadElasticBuffer();
         new CommandManager(this, configManager,pluginLogger);
-        itemFactory = new ItemFactory(this,this,pluginLogger);
-        guiManager = new GuiManager(this, itemFactory,pluginLogger);
-        getServer().getPluginManager().registerEvents(new EventManager(this,guiManager,itemFactory,this,pluginLogger,fileManager,configManager), this);
+        itemFactory = new ItemFactory(this,this,pluginLogger,lang);
+        guiManager = new GuiManager(this, itemFactory,pluginLogger,lang);
+        getServer().getPluginManager().registerEvents(new EventManager(this,guiManager,itemFactory,this,pluginLogger,fileManager,configManager,lang), this);
         placeholdersManager = new Placeholders(this,configManager);
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
             boolean success = placeholdersManager.register();

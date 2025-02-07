@@ -21,18 +21,20 @@ public class ItemFactory {
     private JavaPlugin plugin;
     private SetsGenerator setsGenerator;
     private final PluginLogger pluginLogger;
+    private final Lang lang;
 
-    public ItemFactory(JavaPlugin plugin, SetsGenerator setsGenerator,PluginLogger pluginLogger) {
+    public ItemFactory(JavaPlugin plugin, SetsGenerator setsGenerator,PluginLogger pluginLogger, Lang lang) {
         this.setsGenerator=setsGenerator;
         this.pluginLogger=pluginLogger;
         this.plugin = plugin;
+        this.lang=lang;
     }
 
     public ItemStack createSword(int level) {
-        return createItem(Material.DIAMOND_SWORD, level, setsGenerator.applyGradient("Blade Tier", setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false);
+        return createItem(Material.DIAMOND_SWORD, level, setsGenerator.applyGradient(lang.swordName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false);
     }
     public ItemStack createSword(int level, boolean isForUpgradeGUI, boolean hasRequiredItems) {
-        return createItem(Material.DIAMOND_SWORD, level, setsGenerator.applyGradient("Blade Tier", setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems);
+        return createItem(Material.DIAMOND_SWORD, level, setsGenerator.applyGradient(lang.swordName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems);
     }
 
     public ItemStack createSword() {
@@ -40,20 +42,20 @@ public class ItemFactory {
     }
 
     public ItemStack createTalisman(int level) {
-        return createItem(Material.MAGMA_CREAM, level, setsGenerator.applyGradient("Talisman Tier", setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false);
+        return createItem(Material.MAGMA_CREAM, level, setsGenerator.applyGradient(lang.talismanName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false);
     }
     public ItemStack createTalisman(int level, boolean isForUpgradeGUI, boolean hasRequiredItems) {
-        return createItem(Material.MAGMA_CREAM, level, setsGenerator.applyGradient("Talisman Tier", setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems);
+        return createItem(Material.MAGMA_CREAM, level, setsGenerator.applyGradient(lang.talismanName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems);
     }
     public ItemStack createTalisman() {
         return createTalisman(0); // Poziom podstawowy
     }
 
     public ItemStack createLeggings(int level) {
-        return createItem(Material.LEATHER_LEGGINGS, level, setsGenerator.applyGradient("Leggings Tier", setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false);
+        return createItem(Material.LEATHER_LEGGINGS, level, setsGenerator.applyGradient(lang.leggingsName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false);
     }
     public ItemStack createLeggings(int level, boolean isForUpgradeGUI, boolean hasRequiredItems) {
-        return createItem(Material.LEATHER_LEGGINGS, level, setsGenerator.applyGradient("Leggings Tier", setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems);
+        return createItem(Material.LEATHER_LEGGINGS, level, setsGenerator.applyGradient(lang.leggingsName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems);
     }
 
     public ItemStack createLeggings() {
@@ -61,10 +63,10 @@ public class ItemFactory {
     }
 
     public ItemStack createChestplate(int level) {
-        return createItem(Material.ELYTRA, level, setsGenerator.applyGradient("Elytra Tier", setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false);
+        return createItem(Material.ELYTRA, level, setsGenerator.applyGradient(lang.elytraName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false);
     }
     public ItemStack createChestplate(int level, boolean isForUpgradeGUI, boolean hasRequiredItems) {
-        return createItem(Material.ELYTRA, level, setsGenerator.applyGradient("Elytra Tier", setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems);
+        return createItem(Material.ELYTRA, level, setsGenerator.applyGradient(lang.elytraName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems);
     }
 
     public ItemStack createChestplate() {
@@ -72,10 +74,10 @@ public class ItemFactory {
     }
 
     public ItemStack createBoots(int level) {
-        return createItem(Material.LEATHER_BOOTS, level, setsGenerator.applyGradient("Boots Tier", setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false);
+        return createItem(Material.LEATHER_BOOTS, level, setsGenerator.applyGradient(lang.bootsName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false);
     }
     public ItemStack createBoots(int level, boolean isForUpgradeGUI, boolean hasRequiredItems) {
-        return createItem(Material.LEATHER_BOOTS, level, setsGenerator.applyGradient("Boots Tier", setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems);
+        return createItem(Material.LEATHER_BOOTS, level, setsGenerator.applyGradient(lang.bootsName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems);
     }
 
     public ItemStack createBoots() {
@@ -83,10 +85,10 @@ public class ItemFactory {
     }
 
     public ItemStack createHelmet(int level) {
-        return createItem(Material.LEATHER_HELMET, level, setsGenerator.applyGradient("Helmet Tier", setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false);
+        return createItem(Material.LEATHER_HELMET, level, setsGenerator.applyGradient(lang.helmetName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false);
     }
     public ItemStack createHelmet(int level, boolean isForUpgradeGUI, boolean hasRequiredItems) {
-        return createItem(Material.LEATHER_HELMET, level, setsGenerator.applyGradient("Helmet Tier", setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems);
+        return createItem(Material.LEATHER_HELMET, level, setsGenerator.applyGradient(lang.helmetName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems);
     }
 
     public ItemStack createHelmet() {
@@ -140,19 +142,19 @@ public class ItemFactory {
                 // Ustawiamy nazwę przedmiotu
                 meta.setDisplayName(ChatColor.BOLD+tag + ChatColor.GOLD+ChatColor.BOLD+" ⭐" + ChatColor.DARK_RED+ChatColor.BOLD+ (level-1));
                 lore.clear();
-                lore.add(ChatColor.DARK_PURPLE +""+ChatColor.BOLD+ "MAX LEVEL REACHED!!!");
+                lore.add(ChatColor.DARK_PURPLE +""+ChatColor.BOLD+ lang.maxLeevelReachedMessage);
                 meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "maxLevel"), PersistentDataType.INTEGER, level);
             }else {
-                lore.add(ChatColor.GREEN + "Left-click to upgrade");
+                lore.add(ChatColor.GREEN + lang.leftClickToUpgradeMessage);
                 // Dodajemy linię "Required items:" (zieloną)
                 if (hasRequiredItems) {
-                    lore.add(ChatColor.GREEN + "Required items:");
+                    lore.add(ChatColor.GREEN + lang.requiredItemsMessage);
                     // Każdą linię z itemsList poprzedzamy ChatColor.GREEN
                     for (String itemLine : itemsList) {
                         lore.add(ChatColor.GREEN + itemLine);
                     }
                 } else {
-                    lore.add(ChatColor.RED + "Not enough required items! Required items");
+                    lore.add(ChatColor.RED + lang.notEnoughItemsMessage2);
                     // Każdą linię z itemsList poprzedzamy ChatColor.GREEN
                     for (String itemLine : itemsList) {
                         lore.add(ChatColor.RED + itemLine);

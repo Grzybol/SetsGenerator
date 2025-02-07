@@ -48,10 +48,12 @@ public class EventManager implements Listener {
     // Mapa do przechowywania wybranego przedmiotu przez gracza pomiędzy GUI "Select Upgrade" a "Confirm Upgrade"
     private final Map<UUID, String> playerSelectedUpgradeItem = new HashMap<>();
     //private final Map<UUID, ItemStack> playerSelectedUpgradeItem = new HashMap<>();
+    private final Lang lang;
 
-    public EventManager(JavaPlugin plugin, GuiManager guiManager, ItemFactory itemFactory, SetsGenerator setsGenerator, PluginLogger pluginLogger, FileManager fileManager, ConfigManager configManager) {
+    public EventManager(JavaPlugin plugin, GuiManager guiManager, ItemFactory itemFactory, SetsGenerator setsGenerator, PluginLogger pluginLogger, FileManager fileManager, ConfigManager configManager, Lang lang) {
         this.plugin = plugin;
         this.pluginLogger = pluginLogger;
+        this.lang = lang;
         this.fileManager = fileManager;
         this.guiManager = guiManager;
         this.configManager = configManager;
@@ -82,7 +84,7 @@ public class EventManager implements Listener {
                 Map<String, Integer> currentEqLevels = setsGenerator.getPlayerEquipmentLevels(player);
 
 
-                player.sendMessage(ChatColor.GREEN + "You have interacted with the Shop NPC!");
+                //player.sendMessage(ChatColor.GREEN + "You have interacted with the Shop NPC!");
                 guiManager.openLevelUpGui(player,transactionID);
                 event.setCancelled(true);
             }
@@ -178,7 +180,7 @@ public class EventManager implements Listener {
             }
 
             // Informacja dla gracza (opcjonalne)
-            player.sendMessage(ChatColor.GREEN + "Witaj w serwerze! Otrzymałeś podstawowe wyposażenie.");
+            player.sendMessage(ChatColor.GREEN + lang.welcomeMessage);
         } else {
             Map<String, Integer> currentEqLevels = setsGenerator.getPlayerEquipmentLevels(player);
             pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerJoin: Existing player joined, player "+player.getName()+", currentEqLevels: "+currentEqLevels.toString(),transactionID);
@@ -218,7 +220,7 @@ public class EventManager implements Listener {
         */
 
             // Informacja dla gracza (opcjonalne)
-            player.sendMessage(ChatColor.GREEN + "Witaj ponownie! Twoje wyposażenie zostało zaktualizowane.");
+            player.sendMessage(ChatColor.GREEN + lang.eqUpdatedMessage);
         }
     }
 
@@ -401,8 +403,8 @@ public class EventManager implements Listener {
 
         // Sprawdzamy tytuł okna, aby rozpoznać nasze GUI
         String title = event.getView().getTitle();
-        boolean isSelectUpgradeGui = title.equalsIgnoreCase(ChatColor.GREEN + "Select Upgrade");
-        boolean isConfirmUpgradeGui = title.equalsIgnoreCase(ChatColor.RED + "Confirm Upgrade");
+        boolean isSelectUpgradeGui = title.equalsIgnoreCase(ChatColor.GREEN + lang.selectUpgradeMessage);
+        boolean isConfirmUpgradeGui = title.equalsIgnoreCase(ChatColor.RED + lang.confirmUpgradeMessage);
         int selectedItemLevel = 0;
         selectedItemLevel=setsGenerator.getItemLevel(clickedItem);
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: title " + title+", isSelectUpgradeGui: "+isSelectUpgradeGui+", isConfirmUpgradeGui: "+isConfirmUpgradeGui+", selectedItemLevel: "+selectedItemLevel,transactionID);
@@ -437,7 +439,7 @@ public class EventManager implements Listener {
                     boolean hasRequiredItems = setsGenerator.hasRequiredItems(player, setsGenerator.getUpgradeItems(selectedItemLevel),transactionID);
                     if(!hasRequiredItems){
                         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Not enough items to upgrade! selectedItemLevel "+selectedItemLevel,transactionID);
-                        player.sendMessage(ChatColor.RED + "Not enough items to upgrade!");
+                        player.sendMessage(ChatColor.RED + lang.getNotEnoughItemsMessage);
                         return;
                     }
                     pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: This item is from upgrade GUI!",transactionID);
@@ -446,7 +448,7 @@ public class EventManager implements Listener {
                     boolean hasRequiredItems = setsGenerator.hasRequiredItems(player, setsGenerator.getUpgradeItems(selectedItemLevel + 1),transactionID);
                     if(!hasRequiredItems){
                         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Not enough items to upgrade!",transactionID);
-                        player.sendMessage(ChatColor.RED + "Not enough items to upgrade!");
+                        player.sendMessage(ChatColor.RED + lang.getNotEnoughItemsMessage);
                         return;
                     }
                     pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: This item is not from upgrade GUI!",transactionID);
@@ -464,8 +466,8 @@ public class EventManager implements Listener {
                 }
 
                 String displayName = clickedItem.getItemMeta().getDisplayName();
-                if ((ChatColor.GREEN + "Confirm").equalsIgnoreCase(displayName)) {
-                    player.sendMessage(ChatColor.GREEN + "Upgrade confirmed!");
+                if ((ChatColor.GREEN + lang.confirmMessage).equalsIgnoreCase(displayName)) {
+                    player.sendMessage(ChatColor.GREEN + lang.upgradeConfirmMessage);
                     player.closeInventory();
 
                     // Pobieramy wcześniej wybrany przedmiot
@@ -475,7 +477,7 @@ public class EventManager implements Listener {
 
 
                     if (tag == null) {
-                        player.sendMessage(ChatColor.RED + "No item found to upgrade.");
+                        player.sendMessage(ChatColor.RED + lang.noItemFoundMessage);
                         return;
                     }
 
@@ -503,7 +505,7 @@ public class EventManager implements Listener {
 
 
                     if(!setsGenerator.checkAndRemoveItems(player,setsGenerator.getUpgradeItems(newLevel),transactionID)){
-                        player.sendMessage(ChatColor.RED + "Not enough items to upgrade!");
+                        player.sendMessage(ChatColor.RED + lang.getNotEnoughItemsMessage);
                         return;
                     }
                     fileManager.updatePlayerEquipmentLevel(player.getUniqueId(),tag,newLevel,transactionID);
@@ -538,7 +540,7 @@ public class EventManager implements Listener {
                                 break;
                             default:
                                 pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: This item type cannot be upgraded.", transactionID);
-                                player.sendMessage(ChatColor.RED + "This item cannot be upgraded.");
+                                player.sendMessage(ChatColor.RED + lang.thisItemCannotBeUpgraded);
                                 return;
                         }
                     }else {
@@ -569,14 +571,14 @@ public class EventManager implements Listener {
                                     break;
                                 default:
                                     pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: This item type cannot be upgraded.", transactionID);
-                                    player.sendMessage(ChatColor.RED + "This item cannot be upgraded.");
+                                    player.sendMessage(ChatColor.RED + lang.thisItemCannotBeUpgraded);
                                     return;
                             }
 
                     }
                     if (newItem == null) {
-                        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: newItem is null, upgrade failed.");
-                        player.sendMessage(ChatColor.RED + "Failed to create upgraded item.");
+                        pluginLogger.log(PluginLogger.LogLevel.ERROR, "EventManager.onPlayerClick: newItem is null, upgrade failed.");
+                        player.sendMessage(ChatColor.RED + lang.failedToUpgradeMessage);
                         return;
                     }
 
@@ -589,7 +591,7 @@ public class EventManager implements Listener {
                         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: firstEmpty "+firstEmpty,transactionID);
                         if(firstEmpty==-1){
                             pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: No empty slot to put upgraded item.",transactionID);
-                            player.sendMessage(ChatColor.RED + "No empty slot to put upgraded item.");
+                            player.sendMessage(ChatColor.RED + lang.noEmptySlotMessage);
                             return;
                         }else {
                             pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Setting upgraded item in player's inventory at slot " + firstEmpty,transactionID);
@@ -615,8 +617,8 @@ public class EventManager implements Listener {
 
 
 
-                } else if ((ChatColor.RED + "Cancel").equalsIgnoreCase(displayName)) {
-                    player.sendMessage(ChatColor.RED + "Upgrade canceled.");
+                } else if ((ChatColor.RED + lang.cancelMessage).equalsIgnoreCase(displayName)) {
+                    player.sendMessage(ChatColor.RED + lang.upgradeCancelledMessage);
                     player.closeInventory();
                     playerSelectedUpgradeItem.remove(player.getUniqueId());
                 }else{
