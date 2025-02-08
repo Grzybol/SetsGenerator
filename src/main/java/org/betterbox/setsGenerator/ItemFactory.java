@@ -30,71 +30,71 @@ public class ItemFactory {
         this.lang=lang;
     }
 
-    public ItemStack createSword(int level) {
-        return createItem(Material.DIAMOND_SWORD, level, setsGenerator.applyGradient(lang.swordName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false);
+    public ItemStack createSword(int level, String transactionID) {
+        return createItem(Material.DIAMOND_SWORD, level, setsGenerator.applyGradient(lang.swordName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false,transactionID);
     }
-    public ItemStack createSword(int level, boolean isForUpgradeGUI, boolean hasRequiredItems) {
-        return createItem(Material.DIAMOND_SWORD, level, setsGenerator.applyGradient(lang.swordName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems);
+    public ItemStack createSword(int level, boolean isForUpgradeGUI, boolean hasRequiredItems, String transactionID) {
+        return createItem(Material.DIAMOND_SWORD, level, setsGenerator.applyGradient(lang.swordName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems,transactionID);
     }
 
     public ItemStack createSword() {
-        return createSword(0); // Poziom podstawowy
+        return createSword(0,null); // Poziom podstawowy
     }
 
-    public ItemStack createTalisman(int level) {
-        return createItem(Material.MAGMA_CREAM, level, setsGenerator.applyGradient(lang.talismanName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false);
+    public ItemStack createTalisman(int level, String transactionID) {
+        return createItem(Material.MAGMA_CREAM, level, setsGenerator.applyGradient(lang.talismanName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false,transactionID);
     }
-    public ItemStack createTalisman(int level, boolean isForUpgradeGUI, boolean hasRequiredItems) {
-        return createItem(Material.MAGMA_CREAM, level, setsGenerator.applyGradient(lang.talismanName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems);
+    public ItemStack createTalisman(int level, boolean isForUpgradeGUI, boolean hasRequiredItems, String transactionID) {
+        return createItem(Material.MAGMA_CREAM, level, setsGenerator.applyGradient(lang.talismanName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems,transactionID);
     }
     public ItemStack createTalisman() {
-        return createTalisman(0); // Poziom podstawowy
+        return createTalisman(0,null); // Poziom podstawowy
     }
 
-    public ItemStack createLeggings(int level) {
-        return createItem(Material.LEATHER_LEGGINGS, level, setsGenerator.applyGradient(lang.leggingsName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false);
+    public ItemStack createLeggings(int level, String transactionID) {
+        return createItem(Material.LEATHER_LEGGINGS, level, setsGenerator.applyGradient(lang.leggingsName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false,transactionID);
     }
-    public ItemStack createLeggings(int level, boolean isForUpgradeGUI, boolean hasRequiredItems) {
-        return createItem(Material.LEATHER_LEGGINGS, level, setsGenerator.applyGradient(lang.leggingsName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems);
+    public ItemStack createLeggings(int level, boolean isForUpgradeGUI, boolean hasRequiredItems, String transactionID) {
+        return createItem(Material.LEATHER_LEGGINGS, level, setsGenerator.applyGradient(lang.leggingsName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems,transactionID);
     }
 
     public ItemStack createLeggings() {
-        return createLeggings(0); // Poziom podstawowy
+        return createLeggings(0,null); // Poziom podstawowy
     }
 
-    public ItemStack createChestplate(int level) {
-        return createItem(Material.ELYTRA, level, setsGenerator.applyGradient(lang.elytraName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false);
+    public ItemStack createChestplate(int level, String transactionID) {
+        return createItem(Material.ELYTRA, level, setsGenerator.applyGradient(lang.elytraName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false,transactionID);
     }
-    public ItemStack createChestplate(int level, boolean isForUpgradeGUI, boolean hasRequiredItems) {
-        return createItem(Material.ELYTRA, level, setsGenerator.applyGradient(lang.elytraName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems);
+    public ItemStack createChestplate(int level, boolean isForUpgradeGUI, boolean hasRequiredItems, String transactionID) {
+        return createItem(Material.ELYTRA, level, setsGenerator.applyGradient(lang.elytraName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems,transactionID);
     }
 
     public ItemStack createChestplate() {
-        return createChestplate(0); // Poziom podstawowy
+        return createChestplate(0,null); // Poziom podstawowy
     }
 
-    public ItemStack createBoots(int level) {
-        return createItem(Material.LEATHER_BOOTS, level, setsGenerator.applyGradient(lang.bootsName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false);
+    public ItemStack createBoots(int level, String transactionID) {
+        return createItem(Material.LEATHER_BOOTS, level, setsGenerator.applyGradient(lang.bootsName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false,transactionID);
     }
-    public ItemStack createBoots(int level, boolean isForUpgradeGUI, boolean hasRequiredItems) {
-        return createItem(Material.LEATHER_BOOTS, level, setsGenerator.applyGradient(lang.bootsName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems);
+    public ItemStack createBoots(int level, boolean isForUpgradeGUI, boolean hasRequiredItems, String transactionID) {
+        return createItem(Material.LEATHER_BOOTS, level, setsGenerator.applyGradient(lang.bootsName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems,transactionID);
     }
 
     public ItemStack createBoots() {
-        return createBoots(0); // Poziom podstawowy
+        return createBoots(0,null); // Poziom podstawowy
     }
 
-    public ItemStack createHelmet(int level) {
-        return createItem(Material.LEATHER_HELMET, level, setsGenerator.applyGradient(lang.helmetName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false);
+    public ItemStack createHelmet(int level, String transactionID) {
+        return createItem(Material.LEATHER_HELMET, level, setsGenerator.applyGradient(lang.helmetName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),false,false,transactionID);
     }
-    public ItemStack createHelmet(int level, boolean isForUpgradeGUI, boolean hasRequiredItems) {
-        return createItem(Material.LEATHER_HELMET, level, setsGenerator.applyGradient(lang.helmetName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems);
+    public ItemStack createHelmet(int level, boolean isForUpgradeGUI, boolean hasRequiredItems, String transactionID) {
+        return createItem(Material.LEATHER_HELMET, level, setsGenerator.applyGradient(lang.helmetName, setsGenerator.getStartColor(), setsGenerator.getEndColor(),level),isForUpgradeGUI,hasRequiredItems,transactionID);
     }
 
     public ItemStack createHelmet() {
-        return createHelmet(0); // Poziom podstawowy
+        return createHelmet(0,null); // Poziom podstawowy
     }
-    private ItemStack createItem(Material material, int level, String tag, boolean isForUpgradeGUI,boolean hasRequiredItems) {
+    private ItemStack createItem(Material material, int level, String tag, boolean isForUpgradeGUI,boolean hasRequiredItems, String transactionID) {
         ItemStack item = new ItemStack(material, 1);
         ItemMeta meta = item.getItemMeta();
 
@@ -138,6 +138,7 @@ public class ItemFactory {
             // Pobieramy listę przedmiotów z innej metody
             Map<ItemStack, Integer> requiredItems = setsGenerator.getUpgradeItems(level); // Wstaw swoją mapę przedmiotów i ilości
             List<String> itemsList = setsGenerator.getItemNamesWithQuantity(requiredItems);
+            pluginLogger.log(PluginLogger.LogLevel.DEBUG, "createItem, itemsList: "+itemsList.toString(),transactionID);
             if(setsGenerator.getLoadedLevels()<level){
                 // Ustawiamy nazwę przedmiotu
                 meta.setDisplayName(ChatColor.BOLD+tag + ChatColor.GOLD+ChatColor.BOLD+" ⭐" + ChatColor.DARK_RED+ChatColor.BOLD+ (level-1));
@@ -157,13 +158,16 @@ public class ItemFactory {
                     lore.add(ChatColor.RED + lang.notEnoughItemsMessage2);
                     // Każdą linię z itemsList poprzedzamy ChatColor.GREEN
                     for (String itemLine : itemsList) {
-                        lore.add(ChatColor.RED + itemLine);
+                        if(!Objects.equals(itemLine, "null")) {
+                            lore.add(ChatColor.RED + itemLine);
+                        }
                     }
                 }
             }
 
 
         }
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "createItem, lore: "+lore.toString(),transactionID);
         // Ustawienie Lore w metadanych
         meta.setLore(lore);
 
@@ -204,6 +208,7 @@ public class ItemFactory {
         meta.setUnbreakable(true);
         // Przypisanie metadanych do przedmiotu
         item.setItemMeta(meta);
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "createItem, item: "+item.toString()+", meta:"+meta.toString()+", lore: "+lore.toString(),transactionID);
         return item;
     }
 
@@ -247,7 +252,7 @@ public class ItemFactory {
         item.setItemMeta(meta);
         return item;
     }
-    public ItemStack getNextLevel(ItemStack item,boolean hasRequiredItems) {
+    public ItemStack getNextLevel(ItemStack item,boolean hasRequiredItems, String transactionID) {
         // Sprawdzenie, czy item jest null lub nie posiada metadanych
         if (item == null || !item.hasItemMeta()) {
             return null;
@@ -259,27 +264,27 @@ public class ItemFactory {
         // Sprawdzenie typu przedmiotu i odpowiedniego tagu poziomu
         if (item.getType() == Material.DIAMOND_SWORD && pdc.has(new NamespacedKey(plugin, "sword_level"), PersistentDataType.INTEGER)) {
             int currentLevel = pdc.get(new NamespacedKey(plugin, "sword_level"), PersistentDataType.INTEGER);
-            return createSword(currentLevel + 1, true, hasRequiredItems);
+            return createSword(currentLevel + 1, true, hasRequiredItems,transactionID);
         }
         else if (item.getType() == Material.MAGMA_CREAM && pdc.has(new NamespacedKey(plugin, "talisman_level"), PersistentDataType.INTEGER)) {
             int currentLevel = pdc.get(new NamespacedKey(plugin, "talisman_level"), PersistentDataType.INTEGER);
-            return createTalisman(currentLevel + 1, true, hasRequiredItems);
+            return createTalisman(currentLevel + 1, true, hasRequiredItems,transactionID);
         }
         else if (item.getType() == Material.LEATHER_LEGGINGS && pdc.has(new NamespacedKey(plugin, "leggings_level"), PersistentDataType.INTEGER)) {
             int currentLevel = pdc.get(new NamespacedKey(plugin, "leggings_level"), PersistentDataType.INTEGER);
-            return createLeggings(currentLevel + 1, true, hasRequiredItems);
+            return createLeggings(currentLevel + 1, true, hasRequiredItems,transactionID);
         }
         else if (item.getType() == Material.LEATHER_HELMET && pdc.has(new NamespacedKey(plugin, "helmet_level"), PersistentDataType.INTEGER)) {
             int currentLevel = pdc.get(new NamespacedKey(plugin, "helmet_level"), PersistentDataType.INTEGER);
-            return createHelmet(currentLevel + 1, true, hasRequiredItems);
+            return createHelmet(currentLevel + 1, true, hasRequiredItems,transactionID);
         }
         else if (item.getType() == Material.LEATHER_BOOTS && pdc.has(new NamespacedKey(plugin, "boots_level"), PersistentDataType.INTEGER)) {
             int currentLevel = pdc.get(new NamespacedKey(plugin, "boots_level"), PersistentDataType.INTEGER);
-            return createBoots(currentLevel + 1, true, hasRequiredItems);
+            return createBoots(currentLevel + 1, true, hasRequiredItems,transactionID);
         }
         else if (item.getType() == Material.ELYTRA && pdc.has(new NamespacedKey(plugin, "chestplate_level"), PersistentDataType.INTEGER)) {
             int currentLevel = pdc.get(new NamespacedKey(plugin, "chestplate_level"), PersistentDataType.INTEGER);
-            return createChestplate(currentLevel + 1, true, hasRequiredItems);
+            return createChestplate(currentLevel + 1, true, hasRequiredItems,transactionID);
         }
 
         // Jeśli przedmiot nie jest Twoim niestandardowym przedmiotem, zwróć null

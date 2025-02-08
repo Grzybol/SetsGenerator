@@ -68,9 +68,9 @@ public final class SetsGenerator extends JavaPlugin {
         pluginLogger = new PluginLogger(folderPath, defaultLogLevels,this);
         fileManager = new FileManager(getDataFolder().getAbsolutePath(),this,this,pluginLogger);
         configManager = new ConfigManager(this, pluginLogger, folderPath,this);
-        Lang lang = new Lang(this,pluginLogger);
+        lang = new Lang(this,pluginLogger);
         loadElasticBuffer();
-        new CommandManager(this, configManager,pluginLogger);
+        new CommandManager(this, configManager,pluginLogger,lang);
         itemFactory = new ItemFactory(this,this,pluginLogger,lang);
         guiManager = new GuiManager(this, itemFactory,pluginLogger,lang);
         getServer().getPluginManager().registerEvents(new EventManager(this,guiManager,itemFactory,this,pluginLogger,fileManager,configManager,lang), this);
@@ -767,27 +767,27 @@ public final class SetsGenerator extends JavaPlugin {
         ItemStack newItem = null;
         switch (itemToUpgrade.getType()) {
             case LEATHER_HELMET:
-                newItem = itemFactory.createHelmet(newLevel);
+                newItem = itemFactory.createHelmet(newLevel,transactionID);
                 pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new helmet with level " + newLevel,transactionID);
                 break;
             case DIAMOND_SWORD:
-                newItem = itemFactory.createSword(newLevel);
+                newItem = itemFactory.createSword(newLevel,transactionID);
                 pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new sword with level " + newLevel,transactionID);
                 break;
             case MAGMA_CREAM:
-                newItem = itemFactory.createTalisman(newLevel);
+                newItem = itemFactory.createTalisman(newLevel,transactionID);
                 pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new talisman with level " + newLevel,transactionID);
                 break;
             case LEATHER_LEGGINGS:
-                newItem = itemFactory.createLeggings(newLevel);
+                newItem = itemFactory.createLeggings(newLevel,transactionID);
                 pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new leggings with level " + newLevel,transactionID);
                 break;
             case ELYTRA:
-                newItem = itemFactory.createChestplate(newLevel);
+                newItem = itemFactory.createChestplate(newLevel,transactionID);
                 pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new chestplate with level " + newLevel,transactionID);
                 break;
             case LEATHER_BOOTS:
-                newItem = itemFactory.createBoots(newLevel);
+                newItem = itemFactory.createBoots(newLevel,transactionID);
                 pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new boots with level " + newLevel,transactionID);
                 break;
             default:
@@ -892,7 +892,7 @@ public final class SetsGenerator extends JavaPlugin {
 
         return meta.getPersistentDataContainer().has(key, PersistentDataType.INTEGER);
     }
-    public boolean hasAnyTag(ItemStack item) {
+    public boolean hasAnyTag(ItemStack item, String transactionID) {
         if (item == null || !item.hasItemMeta()) {
             return false;
         }
@@ -900,8 +900,9 @@ public final class SetsGenerator extends JavaPlugin {
         ItemMeta meta = item.getItemMeta();
 
         tags.add("isForUpgradeGUI");
-        tags.add("Confirm");
-        tags.add("Cancel");
+        tags.add(lang.confirmMessage);
+        tags.add(lang.cancelMessage);
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "Initialized tags: " + Arrays.toString(tags.toArray()),transactionID);
 
         for (String tag : tags) {
             NamespacedKey key = new NamespacedKey(this, tag);

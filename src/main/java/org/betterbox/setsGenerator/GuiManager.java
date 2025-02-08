@@ -56,14 +56,14 @@ public class GuiManager {
                 boolean hasRequired = setsGenerator.hasRequiredItems(player, setsGenerator.getUpgradeItems(currentLevel + 1),transactionID);
 
                 // Utwórz przedmiot z kolejnym poziomem
-                ItemStack upgradedItem = createUpgradedItem(itemType, currentLevel + 1, hasRequired);
+                ItemStack upgradedItem = createUpgradedItem(itemType, currentLevel + 1, hasRequired,transactionID);
                 if (upgradedItem != null) {
                     gui.addItem(upgradedItem);
                 }
             } else {
                 boolean hasRequired = setsGenerator.hasRequiredItems(player, setsGenerator.getUpgradeItems(0),transactionID);
                 // Gracz nie posiada tego tagu, utwórz przedmiot z poziomem 0 i flagą true
-                ItemStack upgradedItem = createUpgradedItem(itemType, 0, hasRequired);
+                ItemStack upgradedItem = createUpgradedItem(itemType, 0, hasRequired,transactionID);
                 if (upgradedItem != null) {
                     gui.addItem(upgradedItem);
                 }
@@ -88,7 +88,7 @@ public class GuiManager {
             String itemType = entry.getKey();
             int currentLevel = entry.getValue();
 
-            ItemStack upgradedItem = createUpgradedItem(itemType, currentLevel + 1,setsGenerator.hasRequiredItems(player,setsGenerator.getUpgradeItems(currentLevel + 1),transactionID));
+            ItemStack upgradedItem = createUpgradedItem(itemType, currentLevel + 1,setsGenerator.hasRequiredItems(player,setsGenerator.getUpgradeItems(currentLevel + 1),transactionID),transactionID);
             if (upgradedItem != null) {
                 gui.addItem(upgradedItem);
             }
@@ -98,27 +98,27 @@ public class GuiManager {
         player.openInventory(gui);
     }
 
-    private ItemStack createUpgradedItem(String itemType, int level, boolean hasRequiredItems) {
+    private ItemStack createUpgradedItem(String itemType, int level, boolean hasRequiredItems, String transactionID) {
         switch (itemType) {
             case "chestplate_level":
-                return itemFactory.createChestplate(level,true,hasRequiredItems);
+                return itemFactory.createChestplate(level,true,hasRequiredItems,transactionID);
             case "leggings_level":
-                return itemFactory.createLeggings(level,true,hasRequiredItems);
+                return itemFactory.createLeggings(level,true,hasRequiredItems,transactionID);
             case "helmet_level":
-                return itemFactory.createHelmet(level,true,hasRequiredItems);
+                return itemFactory.createHelmet(level,true,hasRequiredItems,transactionID);
             case "boots_level":
-                return itemFactory.createBoots(level,true,hasRequiredItems);
+                return itemFactory.createBoots(level,true,hasRequiredItems,transactionID);
             case "talisman_level":
-                return itemFactory.createTalisman(level,true,hasRequiredItems);
+                return itemFactory.createTalisman(level,true,hasRequiredItems,transactionID);
             case "sword_level":
-                return itemFactory.createSword(level,true,hasRequiredItems);
+                return itemFactory.createSword(level,true,hasRequiredItems,transactionID);
             default:
                 return null;
         }
     }
 
-    public void openConfirmationGui(Player player, ItemStack selectedItem) {
-        String transactionID = UUID.randomUUID().toString();
+    public void openConfirmationGui(Player player, ItemStack selectedItem,String transactionID) {
+        //String transactionID = UUID.randomUUID().toString();
         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "GuiManagert.openConfirmationGui for player: " + player.getName()+", selectedItem: "+selectedItem.toString(),transactionID);
         // Tworzenie GUI potwierdzającego
         Inventory confirmationGui = Bukkit.createInventory(null, 9, ChatColor.RED + lang.confirmUpgradeMessage);
@@ -127,7 +127,7 @@ public class GuiManager {
         ItemStack greenWool = new ItemStack(Material.GREEN_WOOL);
         ItemMeta greenMeta = greenWool.getItemMeta();
         if (greenMeta != null) {
-            greenMeta.displayName(Component.text("Confirm", NamedTextColor.GREEN));
+            greenMeta.displayName(Component.text(lang.confirmMessage, NamedTextColor.GREEN));
             greenMeta.getPersistentDataContainer().set(new NamespacedKey(plugin, lang.confirmMessage), PersistentDataType.INTEGER, 1);
             greenWool.setItemMeta(greenMeta);
             pluginLogger.log(PluginLogger.LogLevel.DEBUG, "GuiManagert.openConfirmationGui for player: " + player.getName()+" confirmed",transactionID);
@@ -137,7 +137,7 @@ public class GuiManager {
         ItemStack redWool = new ItemStack(Material.RED_WOOL);
         ItemMeta redMeta = redWool.getItemMeta();
         if (redMeta != null) {
-            redMeta.displayName(Component.text("Cancel", NamedTextColor.RED));
+            redMeta.displayName(Component.text(lang.cancelMessage, NamedTextColor.RED));
             redMeta.getPersistentDataContainer().set(new NamespacedKey(plugin, lang.cancelMessage), PersistentDataType.INTEGER, 1);
             redWool.setItemMeta(redMeta);
         }
@@ -146,7 +146,12 @@ public class GuiManager {
         confirmationGui.setItem(3, greenWool);
         confirmationGui.setItem(5, redWool);
         confirmationGui.setItem(4, selectedItem);
+        pluginLogger.log(PluginLogger.LogLevel.DEBUG, "GuiManagert.openConfirmationGui for player: " + player.getName()+", added items to gui.",transactionID);
         // Otwórz GUI dla gracza
+        try{
         player.openInventory(confirmationGui);
+        }catch (Exception e){
+            pluginLogger.log(PluginLogger.LogLevel.ERROR, "GuiManagert.openConfirmationGui for player: " + player.getName()+", error: "+e.getMessage(),transactionID);
+        }
     }
 }

@@ -166,12 +166,12 @@ public class EventManager implements Listener {
 
             // Przygotowanie mapy funkcji do tworzenia przedmiotów na poziomie 0
             Map<String, Function<Integer, ItemStack>> creationMethods = new HashMap<>();
-            creationMethods.put("chestplate_level", level -> itemFactory.createChestplate(level));
-            creationMethods.put("leggings_level", level -> itemFactory.createLeggings(level));
-            creationMethods.put("helmet_level", level -> itemFactory.createHelmet(level));
-            creationMethods.put("boots_level", level -> itemFactory.createBoots(level));
-            creationMethods.put("talisman_level", level -> itemFactory.createTalisman(level));
-            creationMethods.put("sword_level", level -> itemFactory.createSword(level));
+            creationMethods.put("chestplate_level", level -> itemFactory.createChestplate(level,transactionID));
+            creationMethods.put("leggings_level", level -> itemFactory.createLeggings(level,transactionID));
+            creationMethods.put("helmet_level", level -> itemFactory.createHelmet(level,transactionID));
+            creationMethods.put("boots_level", level -> itemFactory.createBoots(level,transactionID));
+            creationMethods.put("talisman_level", level -> itemFactory.createTalisman(level,transactionID));
+            creationMethods.put("sword_level", level -> itemFactory.createSword(level,transactionID));
 
             // Przydzielenie przedmiotów do ekwipunku gracza
             for (String tag : tags) {
@@ -393,10 +393,13 @@ public class EventManager implements Listener {
         if (hasRestrictedTag(clickedItem)) {
             // Sprawdź, czy gracze próbują przesunąć przedmiot do ekwipunku innego niż własny
             // BottomInventory to ekwipunek gracza, top (clickedInventory inny niż player) to zwykle skrzynka.
-            if (!clickedInventory.equals(player.getInventory())) {
+            /*
+            if (clickedInventory.equals(player.getInventory())) {
                 event.setCancelled(true);
                 player.sendMessage(ChatColor.RED + "You cannot move this restricted item here!");
             }
+
+             */
         }
 
 
@@ -415,7 +418,7 @@ public class EventManager implements Listener {
                 pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: clickedItem is null or AIR",transactionID);
                 return; // Brak interakcji
             }
-            if(!setsGenerator.hasAnyTag(clickedItem)){
+            if(!setsGenerator.hasAnyTag(clickedItem,transactionID)){
                 pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: clickedItem has no tag",transactionID);
                 event.setCancelled(true);
                 return;
@@ -443,7 +446,7 @@ public class EventManager implements Listener {
                         return;
                     }
                     pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: This item is from upgrade GUI!",transactionID);
-                    guiManager.openConfirmationGui(player, clickedItem);
+                    guiManager.openConfirmationGui(player, clickedItem,transactionID);
                 }else {
                     boolean hasRequiredItems = setsGenerator.hasRequiredItems(player, setsGenerator.getUpgradeItems(selectedItemLevel + 1),transactionID);
                     if(!hasRequiredItems){
@@ -452,7 +455,7 @@ public class EventManager implements Listener {
                         return;
                     }
                     pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: This item is not from upgrade GUI!",transactionID);
-                    guiManager.openConfirmationGui(player, itemFactory.getNextLevel(clickedItem,hasRequiredItems));
+                    guiManager.openConfirmationGui(player, itemFactory.getNextLevel(clickedItem,hasRequiredItems,transactionID),transactionID);
                     //player.sendMessage(ChatColor.RED + "This item cannot be upgraded.");
                 }
 
@@ -515,27 +518,27 @@ public class EventManager implements Listener {
                         pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: upgradeItem is null", transactionID);
                         switch (tag) {
                             case "helmet_level":
-                                newItem = itemFactory.createHelmet(newLevel);
+                                newItem = itemFactory.createHelmet(newLevel,transactionID);
                                 pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new helmet with level " + newLevel, transactionID);
                                 break;
                             case "sword_level":
-                                newItem = itemFactory.createSword(newLevel);
+                                newItem = itemFactory.createSword(newLevel,transactionID);
                                 pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new sword with level " + newLevel, transactionID);
                                 break;
                             case "talisman_level":
-                                newItem = itemFactory.createTalisman(newLevel);
+                                newItem = itemFactory.createTalisman(newLevel,transactionID);
                                 pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new talisman with level " + newLevel, transactionID);
                                 break;
                             case "leggings_level":
-                                newItem = itemFactory.createLeggings(newLevel);
+                                newItem = itemFactory.createLeggings(newLevel,transactionID);
                                 pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new leggings with level " + newLevel, transactionID);
                                 break;
                             case "chestplate_level":
-                                newItem = itemFactory.createChestplate(newLevel);
+                                newItem = itemFactory.createChestplate(newLevel,transactionID);
                                 pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new chestplate with level " + newLevel, transactionID);
                                 break;
                             case "boots_level":
-                                newItem = itemFactory.createBoots(newLevel);
+                                newItem = itemFactory.createBoots(newLevel,transactionID);
                                 pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new boots with level " + newLevel, transactionID);
                                 break;
                             default:
@@ -546,27 +549,27 @@ public class EventManager implements Listener {
                     }else {
                             switch (upgradeItem.getType()) {
                                 case LEATHER_HELMET:
-                                    newItem = itemFactory.createHelmet(newLevel);
+                                    newItem = itemFactory.createHelmet(newLevel,transactionID);
                                     pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new helmet with level " + newLevel, transactionID);
                                     break;
                                 case DIAMOND_SWORD:
-                                    newItem = itemFactory.createSword(newLevel);
+                                    newItem = itemFactory.createSword(newLevel,transactionID);
                                     pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new sword with level " + newLevel, transactionID);
                                     break;
                                 case MAGMA_CREAM:
-                                    newItem = itemFactory.createTalisman(newLevel);
+                                    newItem = itemFactory.createTalisman(newLevel,transactionID);
                                     pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new talisman with level " + newLevel, transactionID);
                                     break;
                                 case LEATHER_LEGGINGS:
-                                    newItem = itemFactory.createLeggings(newLevel);
+                                    newItem = itemFactory.createLeggings(newLevel,transactionID);
                                     pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new leggings with level " + newLevel, transactionID);
                                     break;
                                 case ELYTRA:
-                                    newItem = itemFactory.createChestplate(newLevel);
+                                    newItem = itemFactory.createChestplate(newLevel,transactionID);
                                     pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new chestplate with level " + newLevel, transactionID);
                                     break;
                                 case LEATHER_BOOTS:
-                                    newItem = itemFactory.createBoots(newLevel);
+                                    newItem = itemFactory.createBoots(newLevel,transactionID);
                                     pluginLogger.log(PluginLogger.LogLevel.DEBUG, "EventManager.onPlayerClick: Created new boots with level " + newLevel, transactionID);
                                     break;
                                 default:
