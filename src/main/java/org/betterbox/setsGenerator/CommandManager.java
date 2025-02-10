@@ -26,11 +26,13 @@ public class CommandManager implements CommandExecutor, TabCompleter {
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final PluginLogger pluginLogger;
+    private final Lang lang;
     private final String[] tags = {"chestplate_level", "leggings_level", "helmet_level", "boots_level", "talisman_level", "sword_level"};
-    public CommandManager(JavaPlugin plugin, ConfigManager configManager,PluginLogger pluginLogger) {
+    public CommandManager(JavaPlugin plugin, ConfigManager configManager,PluginLogger pluginLogger, Lang lang) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.pluginLogger=pluginLogger;
+        this.lang=lang;
         plugin.getCommand("sg").setExecutor(this);
         plugin.getCommand("sg").setTabCompleter(this);
     }
@@ -64,6 +66,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                 break;
             case "reloadconfig":
                 reloadConfig(sender);
+                lang.loadLangFile();
                 break;
 
             case "spawnnpc":
