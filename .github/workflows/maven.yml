@@ -1,4 +1,4 @@
-name: Public release
+name: Public release old (v3)
 #
 on:
   workflow_dispatch:
